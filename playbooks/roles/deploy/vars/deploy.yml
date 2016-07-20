@@ -1,0 +1,6 @@
+---
+deploy_role_name: "{{ service }}-{{ env }}"
+deploy_profile: "{{ deploy_role_name | get_instance_profile(aws_region) }}"
+
+new_asg_name: "{{ service }}-{{ env }}-{{ timestamp }}"
+deploy_msg: "[service={{ service }} env={{ env }}]"

@@ -1,0 +1,30 @@
+---
+#EC2 Settings override 
+ec2_wait: yes
+ec2_assign_public_ip: yes
+ec2_monitoring: yes
+ec2_instance_type: t2.medium
+
+app_ports:
+  - 22
+
+#SQS Queues the bastion host will listen on.
+sqs_queues:
+  - name: "{{ deploy_queue_name }}"
+    default_visibility_timeout: 30
+    message_retention_period: 3600
+    maximum_message_size: 256000
+    delivery_delay: 30
+    receive_message_wait_time: 10
+
+ansible_deploy_policy: Deploy
+
+iam_policies_to_attach:
+  - policy_name: "{{ ansible_deploy_policy }}"
+    resource_name: "{{ service }}-{{ env }}"
+    resource_type: role
+    
+#ASG Settings override 
+assign_public_ip: yes
+asg_health_check_type: EC2
+asg_subnet_to_use: public

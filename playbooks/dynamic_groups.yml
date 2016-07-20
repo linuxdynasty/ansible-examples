@@ -1,0 +1,40 @@
+- hosts: all
+  pre_tasks:
+    - name: Check for required vars
+      fail:
+        msg: "This play requires a variable named {{ item }}"
+      when: "{{ item }} is not defined"
+      with_items:
+        - service
+        - env
+
+  tasks:
+    - name: Create dynamic groups from services/service
+      group_by:
+        key: "services/{{ service }}"
+
+    - name: Create dynamic groups from environments/env
+      group_by:
+        key: "environments/{{ env }}"
+
+    - name: Create dynamic groups from environments/env/services/service
+      group_by:
+        key: "environments/{{ env }}/services/{{ service }}"
+
+  post_tasks:
+    - set_fact:
+        search_tags:
+          service: "{{ service }}"
+          env: "{{ env }}"
+
+    - name: Add tagged hosts to groups
+      add_host:
+        name: "{{ item }}"
+        groups: "{{ service }}-{{ env }}-ec2"
+        ansible_connection: ssh
+        ansible_user: ubuntu
+      with_items: "{{ aws_region | get_instances_by_tags(search_tags) }}"
+      register: tagged_nodes
+
+    - debug:
+        var: tagged_nodes

@@ -1,0 +1,4 @@
+---
+new_asg_name: "{{ service }}-{{ env }}-{{ docker_tag }}-{{ timestamp }}"
+deploy_msg: "[service={{ service }} env={{ env }} tag={{ docker_tag }}]"
+docker_tag_exist: "{{ docker_hub_check_script }} {{ docker_hub_username }} {{ docker_hub_password }} {{ docker_image }} {{ docker_tag }}"

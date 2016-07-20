@@ -1,0 +1,17 @@
+---
+- include: sai-go-common.yml
+
+- block:
+  - set_fact:
+      needed_container_state: running
+    
+  - include: "actions/initialize_tables.yml"
+  - include: "actions/initialize_keys.yml"
+
+  - set_fact:
+      needed_container_state: exited
+    
+  - include: "actions/initialize_tables.yml"
+  - include: "actions/initialize_keys.yml"
+
+  when: initialize is defined

@@ -1,0 +1,28 @@
+---
+- block:
+  - name: Create Route53 Public Record
+    local_action: 
+      module: route53
+      command: create
+      zone: "{{ domain }}"
+      record: "{{ route53_record_name }}"
+      type: "{{ route53_record_type }}"
+      ttl: 300
+      value: "{{ route53_record_value }}"
+      overwrite: true
+  when: use_vpc_dns is undefined
+
+- block:
+  - name: Create Route53 Public Record
+    local_action: 
+      module: route53
+      command: create
+      private_zone: yes
+      vpc_id: "{{ aws_vpc_id }}"
+      zone: "{{ subdomain }}"
+      record: "{{ route53_record_name }}"
+      type: "{{ route53_record_type }}"
+      ttl: 300
+      value: "{{ route53_record_value }}"
+      overwrite: true
+  when: use_vpc_dns is defined

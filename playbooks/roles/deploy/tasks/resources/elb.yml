@@ -1,0 +1,16 @@
+---
+- ec2_elb_lb:
+    name: "{{ service }}-{{env}}"
+    region: "{{ aws_region }}"
+    state: present
+    subnets: "{{ aws_public_subnets }}"
+    security_group_ids: "{{ aws_public_elb_sg_ids }}"
+    listeners:
+      - protocol: "{{ elb_protocol }}"
+        load_balancer_port: "{{ elb_load_balancer_port }}"
+        instance_protocol: "{{ elb_instance_protocol }}"
+        instance_port: "{{ app_port }}"
+    connection_draining_timeout: "{{ elb_connection_draining_timeout }}"
+    cross_az_load_balancing: "{{ elb_cross_az_load_balancing }}"
+    health_check: "{{ elb_health_check }}"
+  register: aws_elb

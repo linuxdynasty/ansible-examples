@@ -1,0 +1,2 @@
+instance_role_name: "{{ service }}-{{ env }}"
+instance_profile: "{{ instance_role_name | get_instance_profile(aws_region)}}"

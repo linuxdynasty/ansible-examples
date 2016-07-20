@@ -1,0 +1,14 @@
+---
+- name: Launching VPC
+  ec2_vpc_net:
+    name: "{{ aws_vpc_name }}"
+    cidr_block: "{{ aws_cidr }}"
+    region: "{{ aws_region }}"
+    tags:
+      Name: "{{ aws_vpc_name }}"
+    validate_certs: no
+  register: vpc
+- debug: var=vpc
+
+- set_fact:
+    zones: "{{ aws_region | zones() }}"

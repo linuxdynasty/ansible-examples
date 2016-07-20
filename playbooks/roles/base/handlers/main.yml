@@ -1,0 +1,12 @@
+---
+- name: stop docker
+  service: name=docker state=stopped
+  become: yes
+
+- name: start docker
+  service: name=docker state=running
+  become: yes
+
+- name: restart docker
+  service: name=docker state=restarted
+  become: yes

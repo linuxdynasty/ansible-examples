@@ -1,0 +1,11 @@
+packages:
+  - python-pip
+  - "docker-engine=1.9.0-0~{{ ansible_distribution_release }}"
+
+pip_packages:
+  - name: docker-py
+    version: 1.2.2
+  - name: awscli
+    version: 1.9.11
+
+docker_opts: '--storage-driver=aufs'

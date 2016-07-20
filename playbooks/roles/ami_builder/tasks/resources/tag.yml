@@ -1,0 +1,27 @@
+---
+- block:
+  - name: Tag the AMI image with a name
+    local_action:
+      module: ec2_tag
+      state: present
+      resource: "{{ ami_image.image_id }}"
+      region: "{{ aws_region }}"
+      tags:
+        Name: "{{ service }}-{{ timestamp }}"
+        BaseAmiName: "{{ base_ami_name }}"
+        BaseAmi: "{{ base_ami }}"
+        State: "{{ base_ami_state }}"
+  when: ami_state == "present"
+  
+- block:
+  - name: Tag older ami images with ArchivedDate
+    local_action:
+      module: ec2_tag
+      state: present
+      resource: "{{ item }}"
+      region: "{{ aws_region }}"
+      tags:
+        State: archived
+        ArchivedDate: "{{ ansible_date_time.iso8601 }}"
+    with_items: "{{ ami_name_regex | get_older_images(aws_region, exclude_ami=ami_image.image_id) }}"
+  when: ec2_state == "absent"

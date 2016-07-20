@@ -1,0 +1,26 @@
+---
+- name: Scale Out policy
+  local_action:
+    module: ec2_scaling_policy
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ service }}-{{ env }}-ScaleOutPolicy"
+    adjustment_type: "{{ ec2_so_adjustment_type }}"
+    asg_name: "{{ new_asg_name }}"
+    scaling_adjustment: "{{ ec2_so_scaling_adjustment }}"
+    min_adjustment_step: "{{ ec2_so_min_adjustment_step }}"
+    cooldown: "{{ ec2_so_cooldown }}"
+  register: so_result
+
+- name: Scale In policy
+  local_action:
+    module: ec2_scaling_policy
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ service }}-{{ env }}-ScaleInPolicy"
+    adjustment_type: "{{ ec2_si_adjustment_type }}"
+    asg_name: "{{ new_asg_name }}"
+    scaling_adjustment: "{{ ec2_si_scaling_adjustment }}"
+    min_adjustment_step: "{{ ec2_si_min_adjustment_step }}"
+    cooldown: "{{ ec2_si_cooldown }}"
+  register: si_result

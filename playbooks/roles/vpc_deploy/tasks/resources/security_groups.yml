@@ -1,0 +1,125 @@
+---
+- name: Provision Security Group.
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ office_sg_name }}-{{ aws_vpc_name }}"
+    description: "All all ingress from Office to Public subnets"
+    vpc_id: "{{ vpc.vpc['id'] }}"
+    region: "{{ aws_region }}"
+    rules: "{{ office_ips| make_sg_rules(ports=ssh_ports) }}"
+  register: office_sg
+- debug:
+    var: office_sg
+
+- name: Tag the Office security group with a name
+  local_action:
+    module: ec2_tag
+    state: present
+    resource: "{{ office_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ office_sg_name }}-{{ aws_vpc_name  }}"
+      env: "{{ aws_vpc_name }}"
+  delay: 5
+  retries: 5
+
+- name: Provision Security Group for Public ELB.
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ aws_vpc_name }}ELB"
+    description: "All all ingress from Office to Public subnets"
+    vpc_id: "{{ vpc.vpc['id'] }}"
+    region: "{{ aws_region }}"
+    rules: "{{ everywhere| make_sg_rules(ports=https_ports) }}"
+  register: public_elb_sg
+- debug:
+    var: public_elb_sg
+
+- name: Tag the Public ELB security group with a name
+  local_action:
+    module: ec2_tag
+    state: present
+    resource: "{{ public_elb_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ aws_vpc_name }}ELB"
+      env: "{{ aws_vpc_name }}"
+  delay: 5
+  retries: 5
+
+- name: Provision Security Group for Public Subnets.
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ aws_public_subnet_name }}"
+    description: "All all ingress from {{ env }} Public subnets"
+    vpc_id: "{{ vpc.vpc['id']  }}"
+    region: "{{ aws_region  }}"
+    rules: "{{ aws_public_cidrs.values() | make_sg_rules(ports=ssh_ports) }}"
+  register: public_sg
+- debug:
+    var: public_sg
+
+- name: Tag the Public security group with a name
+  local_action:
+    module: ec2_tag
+    state: present
+    resource: "{{ public_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ aws_public_subnet_name }}"
+      env: "{{ aws_vpc_name }}"
+  delay: 5
+  retries: 5
+
+- name: Provision Security Group for Private Subnets.
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ aws_private_subnet_name }}"
+    description: "All all ingress from {{ env }} Private subnets"
+    vpc_id: "{{ vpc.vpc['id']  }}"
+    region: "{{ aws_region  }}"
+    rules: "{{ aws_private_cidrs.values() | make_sg_rules(ports=ssh_ports) }}"
+  register: private_sg
+- debug:
+    var: private_sg
+
+- name: Tag the Private security group with a name
+  local_action:
+    module: ec2_tag
+    state: present
+    resource: "{{ private_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ aws_private_subnet_name }}"
+      env: "{{ aws_vpc_name }}"
+  delay: 5
+  retries: 5
+
+- name: Provision Security Group for Persistent Subnets.
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ aws_persistent_subnet_name }}"
+    description: "All all ingress from {{ env }} Persistent subnets"
+    vpc_id: "{{ vpc.vpc['id']  }}"
+    region: "{{ aws_region  }}"
+    rules: "{{ aws_persistent_cidrs.values() | make_sg_rules(ports=ssh_ports) }}"
+  register: persistent_sg
+- debug:
+    var: persistent_sg
+
+- name: Tag the Persistent security group with a name
+  local_action:
+    module: ec2_tag
+    state: present
+    resource: "{{ persistent_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ aws_persistent_subnet_name }}"
+      env: "{{ aws_vpc_name }}"
+  delay: 5
+  retries: 5

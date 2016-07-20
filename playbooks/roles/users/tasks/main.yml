@@ -1,0 +1,70 @@
+---
+- name: Group creation
+  group:
+    gid: "{{ item.value.gid }}"
+    name: "{{ item.key }}"
+    state: present
+  become: yes
+  with_dict: user_groups
+
+- name: Group deletion
+  group:
+    name: "{{ item.key }}"
+    state: absent
+  with_dict: user_groups_deleted
+  become: yes
+
+- name: Per-user group creation
+  group:
+    name: "{{ item.value.username }}"
+    gid: "{{ item.value.uid | default(omit) }}"
+  with_dict: users
+  become: yes
+  when: users_create_per_user_group
+
+- name: User creation
+  user:
+    name: "{{ item.value.username }}"
+    group: "{{ item.value.username if users_create_per_user_group else users_group }}"
+    groups: "{{ item.value.groups | default(omit) | join(',') }}"
+    shell: "{{ item.value.shell if item.value.shell is defined else users_default_shell }}"
+    comment: "{{ item.key }}"
+    uid: "{{ item.value.uid | default(omit)}}"
+    createhome: "{{ 'yes' if users_create_homedirs else 'no' }}"
+    home: "{{ item.value.homedir | default(omit) }}"
+  with_dict: users
+  become: yes
+
+- name: SSH keys
+  authorized_key:
+    user: "{{ item.0.username }}"
+    key: "{{ item.1 }}"
+    key_options: "{{ item.0.key_options | default(omit) }}"
+  with_subelements:
+    - users
+    - ssh_keys
+  become: yes
+
+- name: Deleted user removal
+  user:
+    name: "{{ item.key }}"
+    state: absent
+  with_dict: users_deleted
+  become: yes
+
+- name: Deleted per-user group removal
+  group:
+    name: "{{ item.key }}"
+    state: absent
+  with_dict: users_deleted
+  when: users_create_per_user_group
+  become: yes
+
+- name: Sudo access
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%admin ALL\='
+    line: '%admin ALL=(ALL) NOPASSWD:ALL'
+    validate: 'visudo -cf %s'
+  become: yes

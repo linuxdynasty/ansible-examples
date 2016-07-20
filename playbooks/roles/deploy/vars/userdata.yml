@@ -1,0 +1,12 @@
+---
+deploy_queue_url: "{{ deploy_queue_name | get_sqs('url', aws_region)  }}"
+userdata: |
+  #!/bin/bash -x
+  exec > /tmp/userdata.log 2>&1 
+  
+  #Find the IP of this host
+  instance_id=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+  instance_ip=$(hostname -i)
+
+  # Send a deploy object to SQS 
+  /usr/local/bin/aws --region {{ aws_region }} sqs send-message --queue-url {{ deploy_queue_url }} --message-body '{"service": "{{ service }}", "env": "{{ env }}", "docker_tag": "{{ docker_tag|default(omit) }}"}' --message-attributes "{\"SenderIp\" : { \"DataType\":\"String\", \"StringValue\":\"${instance_ip}\"}}"

@@ -1,0 +1,27 @@
+---
+- name: Time Right Now 
+  shell: "date +%Y%m%d-%H%M%S"
+  register: date_output
+  failed_when: date_output.rc != 0
+
+- set_fact:
+    aws_vpc_id: "{{ aws_vpc_name | get_vpc_id_by_name(aws_region) }}"
+    timestamp: "{{ date_output.stdout }}"
+
+- block:
+  - set_fact:
+      subnets_to_use: "{{ aws_private_subnets }}"
+  when: asg_subnet_to_use == "private"
+
+- block:
+  - set_fact:
+      subnets_to_use: "{{ aws_public_subnets }}"
+  when: asg_subnet_to_use == "public"
+
+- block:
+  - set_fact:
+      subnets_to_use: "{{ aws_persistent_subnets }}"
+  when: asg_subnet_to_use == "persistent"
+
+- include_vars: services.yml
+- include: "{{ service }}.yml"

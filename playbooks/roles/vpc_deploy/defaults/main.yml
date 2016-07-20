@@ -1,0 +1,8 @@
+ssh_ports:
+  - 22
+
+https_ports:
+  - 443
+
+everywhere:
+  - "0.0.0.0/0"

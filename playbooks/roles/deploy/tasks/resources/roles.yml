@@ -1,0 +1,8 @@
+---
+- include_vars: "{{ service }}.yml"
+- name: Create Roles
+  local_action:
+    module: iam
+    iam_type: role
+    name: "{{ service }}-{{ env }}"
+    state: present

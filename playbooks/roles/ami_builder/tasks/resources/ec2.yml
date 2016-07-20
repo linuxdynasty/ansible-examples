@@ -1,0 +1,9 @@
+---
+- name: "{{ ec2_state }} {{ service }} EC2 Instance"
+  local_action:
+    module: ec2
+    state: "{{ ec2_state }}"
+    region: "{{ aws_region }}"
+    instance_ids:
+      "{{ ec2_name | get_instance_id_by_name(aws_region, ec2_current_state) }}"
+    wait: yes

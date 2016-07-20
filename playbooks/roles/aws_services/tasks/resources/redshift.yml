@@ -1,0 +1,54 @@
+---
+- name: Create Redshift Subnet Group
+  local_action:
+    module: redshift_subnet_group
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ aws_vpc_name }}"
+    description: "{{ aws_vpc_name }} VPC persistence subnets"
+    subnet_ids: "{{ aws_persistent_subnets }}"
+  register: redshift_subnet_group
+  
+- debug:
+    var: redshift_subnet_group
+
+- name: Create Redshift Parameter Group
+  local_action:
+    module: redshift_param_group
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ service }}-{{ env }}"
+    description: "{{ service  }}-{{ env }}"
+    engine: "{{ redshift_engine }}"
+    params: "{{ redshift_params |default(omit) }}"
+  register: redshift_parameter_group
+  
+- debug:
+    var: redshift_parameter_group
+
+- name: Create Redshift Instance
+  local_action:
+    module: redshift
+    name: "{{ service }}-{{ env }}"
+    cluster_type: "{{ redshift_cluster_type }}"
+    node_type: "{{ redshift_node_type }}"
+    db_name: "{{ redshift_db_name }}"
+    username: "{{ redshift_master_username }}"
+    password: "{{ redshift_master_user_password }}"
+    subnet_group_name: "{{ aws_vpc_name }}"
+    parameter_group_name: "{{ service }}-{{ env }}"
+    availability_zone: "{{ zones[0] }}"
+    port: "{{ redshift_port }}"
+    allow_version_upgrade: "{{ redshift_allow_version_upgrade }}"
+    number_of_nodes: "{{ redshift_number_of_nodes |default(1) }}"
+    encrypted: "{{ redshift_encrypted }}"
+    vpc_security_group_ids:
+      - "{{ aws_sg.group_id }}"
+    region: "{{ aws_region }}"
+    tags:
+      Environment: "{{ env }}"
+      Name: "{{ service }}-{{ env }}"
+  register: redshift_instance
+  
+- debug:
+    var: redshift_instance

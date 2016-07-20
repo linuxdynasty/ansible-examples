@@ -1,0 +1,2 @@
+container_name: "{{ service }}-{{ env }}"
+fail_when_not_match: "^(?!{{ docker_tag }})"

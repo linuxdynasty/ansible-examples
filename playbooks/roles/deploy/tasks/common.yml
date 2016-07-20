@@ -1,0 +1,81 @@
+---
+#Create the necessary iam roles and elbs
+
+- set_fact:
+    app_rules: "{{ combined_rules }}"
+    aws_base_ami: "{{ aws_base_ami_name | latest_ami_id(aws_region) }}"
+
+- include: resources/iam_role.yml
+- include: resources/iam_policy.yml
+- include_vars: instance_profile.yml
+
+#Only include ELB resources when the health check is for an ELB
+# Create a CNAME Record that points to the proper ELB and proper route53 record
+- block:
+  - include: resources/elb.yml
+
+  - block:
+    - set_fact:
+        route53_hosted_zone_to_use: "{{ domain }}"
+    when: use_vpc_dns is undefined
+
+  - block:
+    - set_fact:
+        route53_hosted_zone_to_use: "{{ subdomain }}"
+    when: use_vpc_dns is defined
+
+  - set_fact:
+      elbs: "{{ aws_elb.elb.name }}"
+      route53_record_name: "{{ route53_elb_prefix }}.{{ route53_hosted_zone_to_use }}"
+      route53_record_type: CNAME
+      route53_record_value: "{{ aws_elb.elb.dns_name }}"
+
+  - include: resources/route53.yml
+  when: asg_health_check_type == 'ELB'
+
+#Create security groups
+- include: resources/security_group.yml
+  when: dont_include is undefined
+  
+#Set dynamic deployment variables
+- include_vars: deploy.yml
+  when: docker_tag is undefined
+
+- include_vars: docker_deploy.yml
+  when: docker_tag is defined
+
+- include_vars: userdata.yml
+  when: dont_include is undefined
+
+#This will find a current asg and define the current_asg_name if found
+- name: Find name of current ASG
+  asg_finder:
+    asg_name_prefix: "{{ service }}-{{ env }}"
+    region: "{{ aws_region }}"
+
+- name: Check if a docker image with this tag exists
+  command: "{{ docker_tag_exist }}"
+  when: docker_tag is defined
+
+#Create ASG Configurations, Scaling Policies, and Cloudwatch Alarms
+- set_fact:
+    asg_state: present
+    lc_state: present
+
+- debug:
+    var: new_asg_name
+
+- include: resources/asg_launch_config.yml
+- include: resources/asg.yml
+- include: resources/scaling_policy.yml
+- include: resources/cloudwatch_alarm.yml
+
+#Delete the original ASG. This will only execute if a current_asg_name is defined
+- block:
+  - set_fact:
+      asg_state: absent
+      lc_state: absent
+
+  - include: resources/asg.yml
+  - include: resources/asg_launch_config.yml
+  when: current_asg_name is defined

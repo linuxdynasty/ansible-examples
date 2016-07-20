@@ -1,0 +1,2 @@
+rds_instance_address: "{{ rds_instance_name | get_rds_address(aws_region) }}"
+#update_docker_env: "{{ docker_env|combine({'MYSQL_IPADDR':rds_instance_address}) }}"

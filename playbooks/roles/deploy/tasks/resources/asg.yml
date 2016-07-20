@@ -1,0 +1,68 @@
+---
+#This block will only execute if asg_state == present
+- block:
+  - name: Create ASG
+    local_action:
+      module: ec2_asg
+      state: present
+      name: "{{ new_asg_name }}"
+      launch_config_name: "{{ new_asg_name}}"
+      health_check_period: "{{ asg_health_check_period }}"
+      health_check_type: "{{ asg_health_check_type }}"
+      replace_all_instances: "{{ replace_all_instances }}"
+      min_size: "{{ asg_min_size }}"
+      max_size: "{{ asg_max_size }}"
+      desired_capacity: "{{ asg_size }}"
+      region: "{{ aws_region }}"
+      load_balancers: "{{ elbs | default(omit) }}"
+      vpc_zone_identifier: "{{ subnets_to_use | join(',') }}"
+      wait_timeout: "{{ wait_timeout }}"
+      tags:
+        - Name: "{{ new_asg_name }}"
+          propagate_at_launch: yes
+        - service: "{{ service }}"
+          propagate_at_launch: yes
+        - env: "{{ env }}"
+          propagate_at_launch: yes
+    register: asg_result
+
+  - debug:
+      var: asg_result
+
+  rescue:
+    - name: "Deleting ASG {{ new_asg_name }}, wait_timeout reached"
+      local_action:
+        module: ec2_asg
+        name: "{{ new_asg_name }}"
+        region: "{{ aws_region }}"
+        state: absent
+
+    - name: "Deleting ASG Launch Configuration {{ new_asg_name }}, wait_timeout reached"
+      ec2_lc:
+        name: "{{ new_asg_name }}"
+        region: "{{ aws_region }}"
+        state: absent
+
+    - fail:
+        msg: "Health check failed while waiting for number of instances to equal asg size for asg {{ current_asg_name }}"
+  when: '"{{ asg_state }}" == "present"'
+
+#This block will only execute if asg_state == absent
+- block:
+  - name: Delete ASG
+    local_action:
+      module: ec2_asg
+      name: "{{ current_asg_name }}"
+      region: "{{ aws_region }}"
+      state: absent
+  when: '"{{ asg_state }}" == "absent"'
+
+#This block will only execute if asg_state == still_exists
+- block:
+  - name: Ensure new ASG still exists
+    local_action:
+      module: asg_status
+      name: "{{ new_asg_name }}"
+      region: "{{ aws_region }}"
+    register: new_asg_status
+  when: '"{{ asg_state }}" == "still_exists"'

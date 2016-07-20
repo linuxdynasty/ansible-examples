@@ -1,0 +1,18 @@
+---
+- name: Create DynamoDB Tables
+  local_action:
+    module: dynamodb_table
+    name: "{{ item.name }}"
+    region: "{{ aws_region }}"
+    hash_key_name: "{{ item.hash_key_name }}"
+    hash_key_type: "{{ item.hash_key_type }}"
+    range_key_name: "{{ item.range_key_name | default(None) }}"
+    range_key_type: "{{ item.range_key_type | default('STRING') }}"
+    read_capacity: "{{ item.read_capacity }}"
+    write_capacity: "{{ item.write_capacity }}"
+    indexes: "{{ item.indexes | default(omit) }}"
+  with_items: "{{ dynamodb_tables }}"
+  register: dynamodb_tables_created
+
+- debug:
+    var: dynamodb_tables_created

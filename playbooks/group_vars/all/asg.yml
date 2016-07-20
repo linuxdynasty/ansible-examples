@@ -1,0 +1,10 @@
+#Common ASG SETTINGS
+asg_min_size: 1
+asg_max_size: 2
+asg_size: 1
+asg_subnet_to_use: private
+asg_health_check_type: ELB
+asg_health_check_period: 300
+replace_all_instances: yes
+wait_timeout: 900
+assign_public_ip: no

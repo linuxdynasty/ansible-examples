@@ -1,0 +1,7 @@
+---
+- set_fact:
+    base_ami_name: "{{ aws_ubuntu_ami_name }}"
+    base_ami_state: "{{ aws_base_ami_state }}"
+    
+- set_fact:
+    base_ami: "{{ base_ami_name | get_ami_image_id(aws_region) }}"

@@ -1,0 +1,14 @@
+- name: Create SQS Queue
+  local_action:
+    module: sqs_queue
+    name: "{{ item.name  }}"
+    default_visibility_timeout: "{{ item.default_visibility_timeout }}"
+    message_retention_period: "{{ item.message_retention_period }}"
+    maximum_message_size: "{{ item.maximum_message_size }}"
+    delivery_delay: "{{ item.delivery_delay }}"
+    receive_message_wait_time: "{{ item.receive_message_wait_time }}"
+  with_items: "{{ sqs_queues }}"
+  register: sqs_app_queue
+
+- debug:
+    var: sqs_app_queue

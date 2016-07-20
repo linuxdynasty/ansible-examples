@@ -1,0 +1,6 @@
+---
+app_rules_public_sg: "{{ [] | make_sg_rules(group_ids=aws_public_elb_sg_ids, ports=app_ports) }}"
+app_rules_mgmt_sg: "{{ mgmt_public_cidrs | make_sg_rules(ports=app_ports) }}"
+combined_rules: "{{ app_rules_public_sg + app_rules_mgmt_sg + mgmt_ssh_rules }}"
+
+default_iam_policies_to_include: "{{ iam_policies_to_attach }} + {{ kinesis_wo_iam_policies_to_attach }} + {{ cloudwatch_policies_to_attach }}"

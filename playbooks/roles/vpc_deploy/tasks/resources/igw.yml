@@ -1,0 +1,8 @@
+---
+- name: Default Internet Gateway
+  local_action:
+    module: ec2_vpc_igw
+    vpc_id: "{{ vpc.vpc['id'] }}"
+    state: present
+  register: igw
+- debug: var=igw

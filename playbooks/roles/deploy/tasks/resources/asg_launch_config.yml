@@ -1,0 +1,28 @@
+---
+- block:
+  - name: Launch config
+    local_action:
+      module: ec2_lc
+      state: present
+      name: "{{ new_asg_name }}"
+      instance_profile_name: "{{ instance_profile | default(omit) }}"
+      image_id: "{{ aws_base_ami }}"
+      key_name: "{{ aws_ansible_key_name }}"
+      region: "{{ aws_region }}"
+      security_groups: "{{ aws_sg.group_id }}"
+      instance_type: "{{ ec2_instance_type }}"
+      user_data: "{{ userdata | default(omit) }}"
+      instance_monitoring: yes
+      assign_public_ip: "{{ assign_public_ip |default(omit) }}"
+    register: asg_launch_config
+  - debug:
+      var: asg_launch_config
+  when: '"{{ lc_state }}" == "present"'
+
+- block:
+  - name: Delete the old LC
+    ec2_lc:
+      name: "{{ current_lc_name }}"
+      region: "{{ aws_region }}"
+      state: absent
+  when: '"{{ lc_state }}" == "absent"'

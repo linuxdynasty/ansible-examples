@@ -1,0 +1,59 @@
+---
+- set_fact:
+    ec2_state: stopped
+    ec2_current_state: running
+    ec2_name: "{{ service }}-{{ env }}"
+    ami_base_name: "{{ service }}-{{ env }}"
+    ami_name_regex: "{{ service }}-*"
+
+#Stop ec2 instance
+- include: "resources/ec2.yml"
+
+- set_fact:
+    ec2_state: running
+    ec2_current_state: stopped
+    ami_state: present
+
+#Start ec2 instance
+- include: "resources/ec2.yml"
+
+- set_fact:
+    ec2_ip: "{{ ec2_name | get_instance(aws_region, state='running') }}"
+
+- name: Wait for SSH to come up on instance
+  wait_for:
+    host: "{{ ec2_ip }}"
+    port: 22
+    delay: 15
+    timeout: 320
+    state: started
+
+- name: Wait until the ansible user can log into the host.
+  local_action: command ssh -oStrictHostKeyChecking=no ansible@{{ ec2_ip }} exit
+  register: ssh_output
+  until: ssh_output.rc == 0
+  retries: 20
+  delay: 10
+
+- name: Time Right Now 
+  shell: "date +%Y%m%d-%H%M%S"
+  register: date_output
+  failed_when: date_output.rc != 0
+
+- set_fact:
+    timestamp: "{{ date_output.stdout  }}"
+
+- set_fact:
+    ami_name: "{{ service }}-{{ timestamp }}"
+
+- include: "{{ service }}.yml"
+- include: "resources/ami.yml"
+- include: "resources/tag.yml"
+
+- set_fact:
+    ec2_state: absent
+    ec2_current_state: running
+    ami_state: absent
+
+- include: "resources/ec2.yml"
+- include: "resources/tag.yml"

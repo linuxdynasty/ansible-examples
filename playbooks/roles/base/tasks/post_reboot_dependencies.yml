@@ -1,0 +1,14 @@
+# Install Docker and Docker dependencies
+---
+- name: Install base packages
+  apt:
+    name: "{{ item }}"
+  become: yes
+  with_items: packages
+
+- name: Install pip packages
+  pip:
+    name: "{{ item.name }}"
+    version: "{{ item.version }}"
+  become: yes
+  with_items: pip_packages

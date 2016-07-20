@@ -1,0 +1,12 @@
+---
+- name: Create Role
+  local_action:
+    module: iam
+    iam_type: "{{ item.resource_type }}"
+    name: "{{ item.name }}"
+    state: present
+  with_items: "{{ iam_roles_to_create }}"
+  register: iam_roles
+
+- debug:
+    var: iam_roles

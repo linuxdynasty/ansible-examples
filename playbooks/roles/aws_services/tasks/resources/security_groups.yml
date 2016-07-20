@@ -1,0 +1,21 @@
+---
+- name: Provision security group.
+  local_action:
+    module: ec2_group
+    state: present
+    name: "{{ sg_name }}"
+    description: "{{ sg_description }}"
+    vpc_id: "{{ aws_vpc_id }}"
+    region: "{{ aws_region }}"
+    rules: "{{ service_sg_rules }}"
+  register: aws_sg
+
+- name: Tag the security group with a name
+  local_action:
+    module: ec2_tag
+    state: present
+    resource: "{{ aws_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ sg_name }}"
+      env: "{{ env }}"

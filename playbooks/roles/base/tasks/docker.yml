@@ -1,0 +1,19 @@
+---
+- name: Set docker daemon options
+  copy:
+    content: "DOCKER_OPTS=\"{{ docker_opts.rstrip('\n') }}\""
+    dest: /etc/default/docker
+    owner: root
+    group: root
+    mode: 0644
+  become: yes
+  notify:
+    - stop docker
+    - start docker
+- meta: flush_handlers
+
+- name: "Ubuntu 14.04"
+  docker:
+    image: ubuntu:14.04
+    state: present
+  become: yes

@@ -1,0 +1,17 @@
+---
+- name: Create VPC peering connections from Management VPC into the rest of the VPC's
+  local_action:
+    module: ec2_vpc_peer
+    region: "{{ aws_region }}"
+    vpc_id: "{{ vpc_id }}"
+    vpc_peer_id: "{{ item.id }}"
+    requester_routes: "{{ routes_except_mgmt }}"
+    accepter_routes: "{{ mgmt_routes}}"
+    accept_peer: yes
+    state: present
+    resource_tags:
+      Name: "{{ vpc_name }}-{{ item.name }}"
+  with_items: "{{ all_vpcs_except_mgmt }}"
+  register: vpc_peers
+- debug:
+    var: vpc_peers

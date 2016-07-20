@@ -1,0 +1,6 @@
+[kinloader://main]
+checkpointer = dynamodb
+index = {{ splunk_index }}
+stream_name = {{ kinesis_stream_name }}
+aws_region = {{ aws_region }}
+dynamodb_table = {{ splunk_dynamodb_table }}

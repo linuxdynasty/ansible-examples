@@ -1,0 +1,40 @@
+---
+- set_fact:
+    ec2_name: "{{ service }}-{{ env }}"
+
+- name: Stop the ec2 instance
+  local_action:
+    region: "{{ aws_region }}"
+    module: ec2
+    instance_ids:
+      - '{{ ec2_name | get_instance_id_by_name(aws_region) }}'
+    state: stopped
+    wait: True
+
+- name: Start the ec2 instance
+  local_action:
+    region: "{{ aws_region }}"
+    module: ec2
+    instance_ids:
+      - '{{ ec2_name | get_instance_id_by_name(aws_region, "stopped") }}'
+    state: running
+    wait: True
+
+- name: Wait for SSH to come up on instance
+  local_action:
+    module: wait_for
+    host: '{{ ec2_name | get_instance(aws_region, state="running") }}'
+    port: 22
+    delay: 120
+    timeout: 300
+
+- set_fact:
+    ec2_ip: '{{ ec2_name | get_instance(aws_region, state="running") }}'
+
+- name: Wait until the ansible user can log into the host.
+  local_action: 
+    module: command ssh -oStrictHostKeyChecking=no ansible@{{ ec2_ip }} exit
+  register: ssh_output
+  until: ssh_output.rc == 0
+  retries: 20
+  delay: 10

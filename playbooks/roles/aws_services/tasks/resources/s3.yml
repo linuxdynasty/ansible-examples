@@ -1,0 +1,11 @@
+---
+- name: Create S3 Buckets
+  local_action:
+    module: s3
+    bucket: "{{ bucket_name }}"
+    mode: create
+    permission: "{{ bucket_permissions }}"
+  register: s3_bucket
+
+- debug:
+    var: s3_bucket

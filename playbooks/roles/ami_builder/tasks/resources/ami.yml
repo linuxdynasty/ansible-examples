@@ -1,0 +1,16 @@
+---
+- block:
+  - name: "Create AMI for service {{ service }}"
+    local_action:
+      module: ec2_ami
+      name: "{{ ami_name }}"
+      wait: yes
+      wait_timeout: 1200
+      region: "{{ aws_region }}"
+      instance_id: "{{ ec2_name | get_instance_id_by_name(aws_region) }}"
+    register: ami_image
+
+  - debug: 
+      var: ami_image
+
+  when: ami_state == "present"

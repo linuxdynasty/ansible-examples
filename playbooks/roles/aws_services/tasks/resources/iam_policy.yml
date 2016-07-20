@@ -1,0 +1,12 @@
+---
+- name: Create IAM Managed Policy
+  local_action:
+    module: iam_managed_policy
+    state: present
+    policy_name: "{{ item.name }}"
+    policy_json: "{{ item.policy }}"
+  with_items: "{{ policies }}"
+  register: new_iam_policy
+
+- debug:
+    var: new_iam_policy

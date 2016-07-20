@@ -1,0 +1,2 @@
+---
+ami_name: "{{ service }}-{{ right_now }}"

@@ -1,0 +1,5 @@
+---
+ec2_wait: yes
+ec2_assign_public_ip: yes
+ec2_monitoring: yes
+ec2_instance_type: t2.large

@@ -1,0 +1,11 @@
+---
+- include: dynamic_groups.yml
+
+- hosts: '{{ service }}-{{ env }}-ec2'
+  tasks:
+    - name: uptime
+      command: uptime
+      register: output
+
+    - debug:
+        var: output.stdout

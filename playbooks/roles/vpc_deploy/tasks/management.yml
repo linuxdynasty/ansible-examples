@@ -1,0 +1,13 @@
+---
+- include: common.yml
+
+- set_fact:
+    vpc_id: "{{ vpc.vpc['id'] }}"
+
+- set_fact:
+    all_vpcs_except_mgmt: "{{ [vpc_id] | get_all_vpcs_info_except() }}"
+    routes_except_mgmt: "{{ vpc_id | get_all_route_table_ids_except(aws_region) }}"
+    mgmt_routes: "{{ vpc_id | get_route_table_ids(aws_region) }}"
+    vpc_name: "{{ aws_vpc_name }}"
+
+- include: resources/peering.yml

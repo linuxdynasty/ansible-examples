@@ -1,0 +1,16 @@
+---
+- name: Register domain
+  route53_zone:
+    zone: "{{ domain }}"
+    state: present
+  register: route53_public_zone
+- debug: var=route53_public_zone
+
+- name: Register subdomain
+  route53_zone:
+    zone: "{{ subdomain }}"
+    state: present
+    vpc_id: "{{ vpc.vpc['id'] }}"
+    vpc_region: "{{ aws_region }}"
+  register: route53_private_zone
+- debug: var=route53_zone

@@ -1,0 +1,24 @@
+# Add repositories and update kernel
+---
+- name: Add Docker repo key
+  apt_key:
+    url: https://apt.dockerproject.org/gpg
+  become: yes
+
+- name: Add Docker repository
+  apt_repository:
+    repo: 'deb https://apt.dockerproject.org/repo ubuntu-{{ ansible_distribution_release }} main'
+    update_cache: yes
+  become: yes
+
+- name: Install Linux Kernel Extras (includes aufs)
+  apt:
+    name: "{{ item }}"
+  become: yes
+  with_items:
+    - "linux-image-extra-virtual"
+
+- name: Update the system and the kernel as well
+  apt:
+    upgrade: dist
+  become: yes

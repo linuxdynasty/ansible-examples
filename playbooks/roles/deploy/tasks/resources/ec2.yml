@@ -1,0 +1,24 @@
+---
+- name: Launch instance
+  local_action:
+    module: ec2
+    state: present
+    key_name: "{{ aws_ansible_key_name }}"
+    group_id: "{{ aws_sg.group_id }}"
+    instance_type: "{{ ec2_instance_type }}"
+    instance_profile_name: "{{ instance_role_name }}"
+    image: "{{ aws_base_ami }}"
+    instance_tags: 
+      Name: "{{ service }}-{{ env }}"
+      service: "{{ service }}"
+      env: "{{ env }}"
+    monitoring: "{{ ec2_monitoring }}"
+    user_data: "{{ userdata | default(None)}}"
+    region: "{{ aws_region }}"
+    vpc_subnet_id: "{{ vpc_subnet_id }}"
+    wait: "{{ ec2_wait }}"
+    assign_public_ip: "{{ ec2_assign_public_ip }}"
+    volumes: "{{ ec2_volumes |default(omit) }}"
+  register: ec2_instance
+- debug:
+    var: ec2_instance

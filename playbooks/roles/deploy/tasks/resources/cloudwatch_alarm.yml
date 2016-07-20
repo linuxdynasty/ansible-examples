@@ -1,0 +1,36 @@
+---
+- name: Create cloudwatch to add capacity
+  local_action:
+    module: ec2_metric_alarm
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ service }}-{{ env }}-AddCapacity"
+    metric: "{{ cw_so_metric }}"
+    namespace: "{{ cw_so_namespace }}"
+    statistic: "{{ cw_so_statistic }}"
+    comparison: "{{ cw_so_comparison }}"
+    threshold: "{{ cw_so_threshold }}"
+    period: "{{ cw_so_period }}"
+    evaluation_periods: "{{ cw_so_evaluation_periods }}"
+    unit: "{{ cw_so_unit }}"
+    description: "{{ cw_so_description }}"
+    dimensions: {'AutoScalingGroupName': "{{ new_asg_name }}"}
+    alarm_actions: ['{{ so_result["arn"] }}']
+
+- name: Create cloudwatch to remove capacity
+  local_action:
+    module: ec2_metric_alarm
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ service }}-{{ env }}-RemoveCapacity"
+    metric: "{{ cw_si_metric }}"
+    namespace: "{{ cw_si_namespace }}"
+    statistic: "{{ cw_si_statistic }}"
+    comparison: "{{ cw_si_comparison }}"
+    threshold: "{{ cw_si_threshold }}"
+    period: "{{ cw_si_period }}"
+    evaluation_periods: "{{ cw_si_evaluation_periods }}"
+    unit: "{{ cw_si_unit }}"
+    description: "{{ cw_si_description }}"
+    dimensions: {'AutoScalingGroupName': "{{ new_asg_name }}"}
+    alarm_actions: ['{{ si_result["arn"] }}']

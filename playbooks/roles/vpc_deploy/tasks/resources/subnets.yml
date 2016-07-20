@@ -1,0 +1,19 @@
+---
+- name: Launching subnets
+  local_action:
+    module: ec2_vpc_subnet
+    state: present
+    vpc_id: "{{ vpc.vpc['id'] }}"
+    az: "{{ item.az }}"
+    cidr: "{{ item.cidr }}"
+    resource_tags: "{{ item.resource_tags }}"
+  with_items: "{{ aws_subnets_info }}"
+  register: subnets
+
+- debug:
+    var: subnets
+
+- set_fact:
+    aws_public_subnets: "{{ vpc.vpc['id'] | get_subnet_ids(aws_public_cidrs.values(), aws_region) }}"
+    aws_private_subnets: "{{ vpc.vpc['id'] | get_subnet_ids(aws_private_cidrs.values(), aws_region) }}"
+    aws_persistent_subnets: "{{ vpc.vpc['id'] | get_subnet_ids(aws_persistent_cidrs.values(), aws_region) }}"

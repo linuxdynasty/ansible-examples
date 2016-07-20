@@ -1,0 +1,49 @@
+---
+- name: Create RDS Subnet Group
+  rds_subnet_group:
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ aws_vpc_name }}"
+    description: "{{ aws_vpc_name }} VPC persistence subnets"
+    subnets: "{{ aws_persistent_subnets }}"
+  register: subnet_group
+- debug:
+    var: subnet_group
+
+- name: Create RDS Parameter Group
+  rds_param_group:
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ service }}-{{ env }}"
+    description: "{{ service  }}-{{ env }}"
+    engine: "{{ rds_engine }}"
+    params: "{{ rds_params }}"
+  register: parameter_group
+- debug:
+    var: parameter_group
+
+- name: Create RDS Instance
+  rds:
+    command: create
+    db_name: "{{ rds_db_instance_name }}"
+    region: "{{ aws_region }}"
+    instance_name: "{{ service }}-{{ env }}"
+    db_engine: "{{ rds_db_engine }}"
+    engine_version: "{{ rds_engine_version }}"
+    size: "{{ rds_instance_size }}"
+    instance_type: "{{ rds_instance_type }}"
+    username: "{{ rds_username }}"
+    password: "{{ rds_password }}"
+    parameter_group: "{{ service }}-{{ env }}"
+    publicly_accessible: "{{ rds_publicly_accessible }}"
+    vpc_security_groups: "{{ aws_sg.group_id }}"
+    subnet: "{{ aws_vpc_name }}"
+    tags:
+      Environment: "{{ env }}"
+      Name: "{{ service }}-{{ env }}"
+    wait: yes
+    wait_timeout: 1200
+    zone: "{{ zones[0] }}"
+  register: rds_instance
+- debug:
+    var: rds_instance

@@ -1,0 +1,17 @@
+---
+- set_fact:
+    aws_sg:
+      group_id: "{{ office_sg_ids }}"
+    vpc_subnet_id: "{{ aws_vpc_id |get_subnet_ids([aws_public_cidrs.a], aws_region) |first }}"
+    aws_base_ami: "{{ aws_ubuntu_ami_name | get_ami_image_id(aws_region) }}"
+    ssh_user: ubuntu
+    policies_to_attach: "{{ iam_policies_to_attach + cloudwatch_policies_to_attach }}"
+
+- set_fact:
+    iam_policies_to_attach: "{{ policies_to_attach }}"
+    
+- include: resources/iam_role.yml
+- include: resources/iam_policy.yml
+- include_vars: instance_profile.yml
+- include: resources/ec2.yml
+- include: resources/add_host.yml

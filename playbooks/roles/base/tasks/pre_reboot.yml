@@ -1,0 +1,10 @@
+---
+- name: Adding to rename_user.sh rc.local
+  copy:
+    src: rename_user.sh
+    dest: /etc/rc.local
+    mode: 0755
+  become: yes
+
+- include: monitoring.yml
+- include: pre_reboot_dependencies.yml

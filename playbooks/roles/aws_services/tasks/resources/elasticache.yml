@@ -1,0 +1,43 @@
+---
+- name: Create ElasticCache Subnet Group
+  elasticache_subnet_group:
+    state: present
+    region: "{{ aws_region }}"
+    name: "{{ aws_vpc_name }}"
+    description: "{{ aws_vpc_name }} VPC persistence subnets"
+    subnets: "{{ aws_persistent_subnets }}"
+  register: elasticache_subnet_group
+- debug:
+    var: elasticache_subnet_group
+
+- name: Create Elasticache Instance
+  elasticache:
+    state: present
+    name: "{{ elasticache_name }}"
+    region: "{{ aws_region }}"
+    engine: "{{ elasticache_engine }}"
+    cache_engine_version: "{{ elasticache_engine_version }}"
+    node_type: "{{ elasticache_node_type }}"
+    num_nodes: "{{ elasticache_num_nodes }}"
+    cache_port: "{{ elasticache_port }}"
+    security_group_ids:
+      - "{{ aws_sg.group_id }}"
+    cache_subnet_group: "{{ aws_vpc_name }}"
+    wait: yes
+    zone: "{{ zones[0] }}"
+  register: elasticache_instance
+- debug:
+    var: elasticache_instance
+
+- name: Tag ElasticCache
+  local_action:
+    module: elasticache_tag
+    state: present
+    name: "{{ elasticache_name }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ elasticache_name }}"
+      env: "{{ env }}"
+  register: elasticache_tags
+- debug:
+    var: elasticache_tags

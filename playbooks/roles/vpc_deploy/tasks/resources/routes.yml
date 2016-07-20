@@ -1,0 +1,59 @@
+---
+##Public routes in any VPC we will use the same routing table.
+- name: Set up Public route table
+  ec2_vpc_route_table:
+    vpc_id: "{{ vpc.vpc['id'] }}"
+    region: "{{ aws_region }}"
+    tags:
+      Name: "{{ aws_public_subnet_name }}"
+      Env: "{{ env }}"
+    subnets: "{{ aws_public_subnets }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw.gateway_id }}"
+  delay: 5
+  retries: 5
+  register: public_route_table
+- debug: var=public_route_table
+
+##Production Private and Persistent subnets each get their own routing table with a Nat per Zone.
+- block:
+  - name: Set up Route table per Zone
+    ec2_vpc_route_table:
+      vpc_id: "{{ vpc.vpc['id'] }}"
+      region: "{{ aws_region }}"
+      tags:
+        Name: "{{ aws_private_subnet_name }}-Zone-{{ item['zone'] |upper}}"
+        Env: "{{ env }}"
+      subnets: "{{ vpc.vpc['id'] | get_subnet_ids(internal_cidrs[item['zone']], aws_region) }}"
+      routes:
+        - dest: 0.0.0.0/0
+          nat_gateway_id: "{{ item['nat_gateway_id'] }}"
+    with_items:
+      - "{{ zones |parse_nat_results(results=nats.results) }}"
+    delay: 5
+    retries: 5
+    register: private_route_table
+  - debug: var=private_route_table
+  when: '"{{ aws_vpc_name }}" == "Production"'
+
+##Non Production Private and Persistent subnets will use the same nat instance.
+- block:
+  - name: Set up Route table per Zone
+    ec2_vpc_route_table:
+      vpc_id: "{{ vpc.vpc['id'] }}"
+      region: "{{ aws_region }}"
+      tags:
+        Name: "{{ aws_private_subnet_name }}-Zone-{{ item['zone'] |upper}}"
+        Env: "{{ env }}"
+      subnets: "{{ vpc.vpc['id'] | get_subnet_ids(internal_cidrs[item['zone']], aws_region) }}"
+      routes:
+        - dest: 0.0.0.0/0
+          nat_gateway_id: "{{ item['nat_gateway_id'] }}"
+    with_items:
+      - "{{ zones |parse_nat_results(nat_gateway_id=nat.nat_gateway_id) }}"
+    delay: 5
+    retries: 5
+    register: private_route_table
+  - debug: var=private_route_table
+  when: '"{{ aws_vpc_name }}" != "Production"'

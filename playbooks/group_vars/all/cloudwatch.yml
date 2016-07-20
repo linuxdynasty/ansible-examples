@@ -1,0 +1,30 @@
+---
+#Common CloudWatch Add Capacity SETTINGS
+cw_so_metric: "CPUUtilization"
+cw_so_namespace: "AWS/EC2"
+cw_so_statistic: Average
+cw_so_comparison: ">="
+cw_so_threshold: 50.0
+cw_so_period: 60
+cw_so_evaluation_periods: 3
+cw_so_unit: "Percent"
+cw_so_description: "Scale up when cpu usage is > 80% for 3 periods"
+
+#Common CloudWatch Remove Capacity SETTINGS
+cw_si_metric: "CPUUtilization"
+cw_si_namespace: "AWS/EC2"
+cw_si_statistic: Average
+cw_si_comparison: "<="
+cw_si_threshold: 20.0
+cw_si_period: 60
+cw_si_evaluation_periods: 3
+cw_si_unit: "Percent"
+cw_si_description: "Scale down when cpu usage is <= 20% for 3 periods"
+
+#CloudWatch IAM Policy. This is needed by all instances
+cloudwatch_policy_name: "CloudWatch-Metrics"
+
+cloudwatch_policies_to_attach:
+  - policy_name: "{{ cloudwatch_policy_name }}"
+    resource_name: "{{ service }}-{{ env }}"
+    resource_type: role

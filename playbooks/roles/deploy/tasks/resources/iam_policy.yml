@@ -1,0 +1,13 @@
+---
+- name: Attach IAM Managed Policies to resource
+  local_action:
+    module: iam_managed_policy
+    state: present
+    iam_type: "{{ item['resource_type'] }}"
+    iam_name: "{{ item['resource_name'] }}"
+    policy_name: "{{ item['policy_name'] }}"
+  with_items: "{{ iam_policies_to_attach }}"
+  register: attached_iam_policies
+
+- debug:
+    var: attached_iam_policies

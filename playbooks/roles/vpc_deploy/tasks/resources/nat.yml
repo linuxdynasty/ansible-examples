@@ -1,0 +1,41 @@
+---
+- block:
+  - set_fact:
+      aws_public_subnet_id_a: "{{ vpc.vpc['id'] | get_subnet_ids([aws_public_cidrs.a], aws_region) | first }}"
+    tags:
+      - full_vpc_deploy
+      - vpc_deploy
+
+  - name: Launching NAT Gateway in Public Subnet A
+    ec2_vpc_nat_gateway:
+      region: "{{ aws_region }}"
+      state: present
+      subnet_id: "{{ aws_public_subnet_id_a }}"
+      if_exist_do_not_create: yes
+      wait: yes
+      wait_timeout: 600
+    tags:
+      - full_vpc_deploy
+      - vpc_deploy
+    register: nat
+
+  - debug: var=nat
+  when: '"{{ aws_vpc_name }}" != "Production"'
+
+- block:
+  - name: Launching NAT Gateway in each AZ in Production
+    ec2_vpc_nat_gateway:
+      region: "{{ aws_region }}"
+      state: present
+      subnet_id: "{{ item }}"
+      if_exist_do_not_create: yes
+      wait: yes
+      wait_timeout: 600
+    tags:
+      - full_vpc_deploy
+      - vpc_deploy
+    with_items: "{{ aws_public_subnets }}"
+    register: nats
+
+  - debug: var=nats
+  when: '"{{ aws_vpc_name }}" == "Production"'

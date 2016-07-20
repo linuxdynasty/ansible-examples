@@ -1,0 +1,19 @@
+---
+- name: Create security group for app instances
+  ec2_group:
+    name: "{{ service }}-{{ env }}"
+    description: "{{ service }}-{{ env }} app servers"
+    vpc_id: "{{ aws_vpc_id }}"
+    region: "{{ aws_region }}"
+    rules: "{{ app_rules }}"
+  register: aws_sg
+
+- name: Tag the security group with a name
+  ec2_tag:
+    state: present
+    resource: "{{ aws_sg.group_id }}"
+    region: "{{ aws_region }}" 
+    tags:
+      Name: "{{ service }}-{{ env }}"
+      env: "{{ env }}"
+      service: "{{ service }}"

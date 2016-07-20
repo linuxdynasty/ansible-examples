@@ -1,0 +1,16 @@
+---
+- name: Create Kinesis Stream
+  local_action:
+    module: kinesis_stream
+    name: "{{ kinesis_stream_name }}"
+    region: "{{ aws_region }}"
+    shards: "{{ kinesis_stream_shard_count }}"
+    tags:
+      service: "{{ service }}"
+      env: "{{ env }}"
+    wait: yes
+    wait_timeout: 600
+  register: kinesis_stream
+
+- debug:
+    var: kinesis_stream

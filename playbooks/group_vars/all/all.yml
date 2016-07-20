@@ -1,0 +1,21 @@
+env_name: "{{ env | lower  }}"
+mgmt_vpc_name: 'Management'
+ssh_user: ansible
+
+#AWS Settings
+aws_region: us-west-2
+aws_ubuntu_ami_name: 'ubuntu/images/hvm/ubuntu-trusty-14.04-amd64-server-20151117'
+aws_base_ami_name: "base-*"
+aws_base_ami_owner: "self"
+aws_base_ami_state: "current"
+aws_ansible_key_name: ansible
+
+#SQS Ansible Listener
+deploy_queue_name: Deploy
+
+office_ips:
+  - 64.71.21.198/32
+  - 4.15.74.6/32
+
+office_ssh_rules: "{{ office_ips | make_sg_rules(ports=ssh_ports) }}"
+office_sg_name: PublicOffice

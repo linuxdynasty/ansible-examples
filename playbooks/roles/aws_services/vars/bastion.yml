@@ -1,0 +1,30 @@
+policies:
+  - name: "{{ deploy_queue_name }}"
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "Stmt1417926406000",
+            "Effect": "Allow",
+            "Action": [
+              "sqs:SendMessage"
+            ],
+            "Resource": [
+              "{{ deploy_queue_name | get_sqs('arn', aws_region) }}"
+            ]
+          }
+        ]
+      }
+  - name: "{{ ansible_deploy_policy }}"
+    policy: |
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": "*",
+            "Resource": "*"
+          }
+        ]
+      }

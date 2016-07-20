@@ -1,0 +1,11 @@
+---
+- name: Upload Ansible Public Key Pair
+  local_action:
+    module: ec2_key
+    name: "{{ aws_ansible_key_name }}"
+    key_material: "{{ ansible_public_key }}"
+    state: present
+  register: ansible_key
+
+- debug:
+    var: ansible_key

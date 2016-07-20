@@ -1,0 +1,26 @@
+---
+- name: Adding go-aws-mon to /usr/local/bin
+  copy:
+    src: go-aws-mon
+    dest: /usr/local/bin
+    mode: 0755
+  become: yes
+
+- name: Create CloudWatch entry in cronfile to run every minute for system metrics
+  cron:
+    name: "go-aws-mon cloudwatch system metrics"
+    cron_file: cloudwatch
+    user: ansible
+    job: "/usr/local/bin/go-aws-mon --mem-util --mem-used --mem-avail --swap-util --swap-used  --disk-space-util --disk-inode-util --disk-space-used --disk-space-avail"
+    minute: "*"
+    hour: "*"
+    day: "*"
+    weekday: "*"
+    month: "*"
+    state: present
+  register: jobs
+  become: yes
+
+- debug:
+    var: jobs
+    

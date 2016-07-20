@@ -1,0 +1,2 @@
+---
+- include: sai-go-common.yml

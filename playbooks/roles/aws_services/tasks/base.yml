@@ -1,0 +1,3 @@
+---
+- include_vars: "{{ service }}.yml"
+- include: resources/iam_policy.yml

@@ -1,0 +1,16 @@
+Ä}q(U=/usr/local/lib/python2.7/dist-packages/boto/ec2/connection.py}q(U"EC2Connection.get_all_reservationscrope.base.oi.memorydb
+ScopeInfo
+q)Åq}q(UinstanceqUdefinedqU=/usr/local/lib/python2.7/dist-packages/boto/ec2/connection.pyUEC2ConnectionqáÜUunknownÖq	(Ubuiltinq
+Udictqh	h	th	h	UnoneÖqth
+Ulistq(h
+UtupleqUbuiltinUstrÜqhU;/usr/local/lib/python2.7/dist-packages/boto/ec2/instance.pyUReservationqátás}qÜbUEC2Connection.get_all_instancesh)Åq}q(hhU=/usr/local/lib/python2.7/dist-packages/boto/ec2/connection.pyháÜh(h
+hh	h	thhth
+h(h
+hhhU;/usr/local/lib/python2.7/dist-packages/boto/ec2/instance.pyhátás}qÜbuU;/usr/local/lib/python2.7/dist-packages/boto/ec2/__init__.py}q(Uregionsqh)Åq}q)h
+hhás}qÜbUconnect_to_regionqh)Åq}qh	ÖhhU=/usr/local/lib/python2.7/dist-packages/boto/ec2/connection.pyháÜs}qÜbuU9/usr/local/lib/python2.7/dist-packages/boto/regioninfo.py}qUget_regionsqh)Åq }q!hhhU=/usr/local/lib/python2.7/dist-packages/boto/ec2/connection.pyhááh
+hhás}q"ÜbsU9/usr/local/lib/python2.7/dist-packages/boto/connection.py}q#UAWSQueryConnection.get_listh)Åq$}q%(hhU=/usr/local/lib/python2.7/dist-packages/boto/ec2/connection.pyháÜh(h
+hhhth
+h(h
+hhhU;/usr/local/lib/python2.7/dist-packages/boto/ec2/instance.pyhátáhhhth
+h(h
+hhhU;/usr/local/lib/python2.7/dist-packages/boto/ec2/instance.pyhátás}q&Übsu.
