@@ -338,7 +338,7 @@ def convert_to_lower(data):
                 results[key] = val
     return results
 
-def validate_json(policy_json, is_file=False):
+def validate_json(policy_json, is_file=False, module=None):
     """Validate and convert to json if needed.
 
     Args:
@@ -374,13 +374,20 @@ def validate_json(policy_json, is_file=False):
                     'Failed to convert the policy into valid JSON: {0}'
                     .format(str(e))
                 )
+                module.fail_json(
+                    msg='{0},{1}: {2}'.format(policy_json, type(policy_json), str(e))
+                )
         elif isinstance(policy_json, basestring):
             try:
-                policy = dumps(loads(policy_json))
+                policy = dumps(eval(policy_json))
+                #policy = dumps(loads(policy_json))
             except Exception as e:
                 err_msg = (
                     'Failed to convert the policy into valid JSON: {0}'
                     .format(str(e))
+                )
+                module.fail_json(
+                    msg='{0},{1}: {2}'.format(policy_json, type(policy_json), str(e))
                 )
         else:
             err_msg = (
@@ -1416,14 +1423,14 @@ def main():
         )
 
     if policy_document:
-        policy, err_msg = validate_json(policy_document, is_file=True)
+        policy, err_msg = validate_json(policy_document, is_file=True, module=module)
         if err_msg:
             module.fail_json(
                 msg='Failed to convert the policy into valid JSON: %s' % str(e)
             )
 
     elif policy_json:
-        policy, err_msg = validate_json(policy_json)
+        policy, err_msg = validate_json(policy_json, module=module)
         if err_msg:
             module.fail_json(msg=err_msg)
     else:

@@ -1,14 +1,14 @@
 ---
 - name: Add instances to host group
   add_host:
-    name: "{{ ec2_instance.instances[0].public_ip }}"
-    groups: "{{ service }},{{ env }},{{ service }}_ec2"
+    name: "{{ ec2_ip }}"
+    groups: "{{ service }},{{ env }},{{ ec2_group }}"
     ansible_connection: ssh
     ansible_user: "{{ ssh_user }}"
 
 - name: Wait for SSH to come up on instance
   wait_for:
-    host: "{{ ec2_instance.instances[0].public_ip }}"
+    host: "{{ ec2_ip }}"
     port: 22
     delay: 15
     timeout: 320

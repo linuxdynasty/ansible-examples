@@ -1,4 +1,5 @@
 - hosts: all
+
   pre_tasks:
     - name: Check for required vars
       fail:
@@ -9,17 +10,9 @@
         - env
 
   tasks:
-    - name: Create dynamic groups from services/service
-      group_by:
-        key: "services/{{ service }}"
-
-    - name: Create dynamic groups from environments/env
-      group_by:
-        key: "environments/{{ env }}"
-
-    - name: Create dynamic groups from environments/env/services/service
-      group_by:
-        key: "environments/{{ env }}/services/{{ service }}"
+    - include_vars: "group_vars/services/{{ service }}.yml"
+    - include_vars: "group_vars/environments/{{ env }}/network.yml"
+    - include_vars: "group_vars/environments/{{ env }}/services/{{ service }}.yml"
 
   post_tasks:
     - set_fact:
@@ -33,7 +26,7 @@
         groups: "{{ service }}-{{ env }}-ec2"
         ansible_connection: ssh
         ansible_user: ubuntu
-      with_items: "{{ aws_region | get_instances_by_tags(search_tags) }}"
+      with_items: "{{ aws_region | get_instances_by_tags(search_tags, state='running') }}"
       register: tagged_nodes
 
     - debug:

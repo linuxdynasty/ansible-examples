@@ -14,4 +14,9 @@
 - include: resources/iam_policy.yml
 - include_vars: instance_profile.yml
 - include: resources/ec2.yml
+
+- set_fact:
+    ec2_ip: "{{ ec2_instance.instances[0].public_ip }}"
+    ec2_group: "{{ service  }}_ec2"
+    
 - include: resources/add_host.yml

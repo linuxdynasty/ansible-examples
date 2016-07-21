@@ -1,6 +1,6 @@
 policies:
   - name: "{{ cloudwatch_policy_name }}"
-    policy: |
+    policy: >-
       {
         "Version": "2012-10-17",
         "Statement": [

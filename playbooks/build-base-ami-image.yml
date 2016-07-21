@@ -2,12 +2,11 @@
 - include: dynamic_groups.yml
 
 - hosts: 127.0.0.1
-
   roles:
     - { role: aws_services }
     - { role: deploy }
-
-- hosts: '{{ service }}_ec2'
+  
+- hosts: base_ec2
   gather_facts: True
   roles:
     - { role: base, ansible_connection: ssh, ansible_user: ubuntu, action: "pre_reboot" }
@@ -27,11 +26,11 @@
     - name: Add base instances to host group
       add_host:
         name: "{{ ec2_ip }}"
-        groups: "{{ service }}-{{ env }}_ec2"
+        groups: "{{ service }}_ec2_final"
         ansible_ssh_user: ansible
         ansible_sudo_user: root
 
-- hosts: '{{ service }}-{{ env }}_ec2'
+- hosts: base_ec2_final
   gather_facts: True
   roles:
     - { role: base, ansible_connection: ssh, ansible_user: ansible, action: "post_reboot" }
