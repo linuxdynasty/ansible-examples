@@ -1,7 +1,0 @@
----
-- block:
-  - include: resources/sqs.yml
-  - include_vars: "{{ service }}.yml"
-  - include: resources/iam_policy.yml
-  when: '"{{ aws_vpc_name }}" == "Management"'
-

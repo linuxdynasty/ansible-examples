@@ -1,33 +1,31 @@
 domain: foobar.org
-subdomain: f.foobar.org
-aws_vpc_name: FooBar
-env_short_name: foobar
-aws_cidr: 10.200.0.0/16
-use_vpc_dns: yes
+subdomain: m.foobar.org
+aws_vpc_name: Management
+aws_cidr: 10.100.0.0/16
 
 #PRIVATE
 aws_private_subnet_name: "{{ aws_vpc_name }}-Private"
 aws_private_cidrs:
-  a: 10.200.10.0/24
-  b: 10.200.11.0/24
-  c: 10.200.12.0/24
+  a: 10.100.10.0/24
+  b: 10.100.11.0/24
+  c: 10.100.12.0/24
 aws_private_subnets_info: "{{ aws_region | build_subnet_data(aws_private_subnet_name, env, aws_private_cidrs) }}"
 
 #PUBLIC
 aws_public_subnet_name: "{{ aws_vpc_name }}-Public"
 aws_public_elb_sg: "{{ aws_vpc_name }}ELB"
 aws_public_cidrs:
-  a: 10.200.0.0/24
-  b: 10.200.1.0/24
-  c: 10.200.2.0/24
+  a: 10.100.0.0/24
+  b: 10.100.1.0/24
+  c: 10.100.2.0/24
 aws_public_subnets_info: "{{ aws_region | build_subnet_data(aws_public_subnet_name, env, aws_public_cidrs) }}"
 
 #PERSISTENT
 aws_persistent_subnet_name: "{{ aws_vpc_name }}-Persistent"
 aws_persistent_cidrs:
-  a: 10.200.20.0/24
-  b: 10.200.21.0/24
-  c: 10.200.22.0/24
+  a: 10.100.20.0/24
+  b: 10.100.21.0/24
+  c: 10.100.22.0/24
 aws_persistent_subnets_info: "{{ aws_region | build_subnet_data(aws_persistent_subnet_name, env, aws_persistent_cidrs) }}"
 
 aws_vpc_subnets: "{{ aws_private_cidrs.values() + aws_public_cidrs.values() + aws_persistent_cidrs.values() }}"

@@ -1,3 +1,0 @@
----
-- include_vars: "{{ service }}.yml"
-- include: "{{ service }}.yml"

@@ -11,8 +11,12 @@
 
   tasks:
     - include_vars: "group_vars/services/{{ service }}.yml"
+      when: service != 'vpc'
+
     - include_vars: "group_vars/environments/{{ env }}/network.yml"
+
     - include_vars: "group_vars/environments/{{ env }}/services/{{ service }}.yml"
+      when: service != 'vpc'
 
   post_tasks:
     - set_fact:

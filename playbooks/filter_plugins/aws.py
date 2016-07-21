@@ -7,7 +7,11 @@ import boto.ec2.autoscale
 
 from ansible import errors
 
-def get_account_id(region):
+def aws_client(region, service='ec2', profile=None):
+    session = boto3.Session(region_name=region, profile_name=profile)
+    return session.client(service)
+
+def get_account_id(region, profile=None):
     """ Retrieve the AWS account id.
     Args:
         region (str): The AWS region.
@@ -20,16 +24,16 @@ def get_account_id(region):
     Returns:
         String
     """
-    client = boto3.client('iam', region_name=region)
+    client = aws_client(region, 'iam', profile)
     try:
         account_id = client.list_users()['Users'][0]['Arn'].split(':')[4]
         return account_id
-    except Exception as e:
+    except Exception:
         raise errors.AnsibleFilterError(
-            "Failed to retrieve account id: {0}".format(e)
+            "Failed to retrieve account id"
         )
 
-def get_sg_cidrs(name, vpc_id, region):
+def get_sg_cidrs(name, vpc_id, region, profile=None):
     """
     Args:
         name (str): The name of the security group you are looking for.
@@ -39,14 +43,14 @@ def get_sg_cidrs(name, vpc_id, region):
     Basic Usage:
         >>> name = 'ProductionELB'
         >>> region = 'us-west-2'
-        >>> vpc_id = 'vpc-cf548aaa'
+        >>> vpc_id = 'vpc-123456'
         >>> security_group_id = get_sg(name, vpc_id, region)
         >>> print security_group_id
 
     Returns:
         String
     """
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         "Filters": [
             {
@@ -79,17 +83,17 @@ def get_sg_cidrs(name, vpc_id, region):
         )
 
 
-def get_sg(name, vpc_id, region):
+def get_sg(name, vpc_id, region, profile=None):
     """
     Args:
         name (str): The name of the security group you are looking for.
         vpc_id (str): The VPC id where this security group resides.
-        region (str): The region in which the security group resides.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> name = 'ProductionELB'
         >>> region = 'us-west-2'
-        >>> vpc_id = 'vpc-cf548aaa'
+        >>> vpc_id = 'vpc-123456'
         >>> security_group_id = get_sg(name, vpc_id, region)
         >>> print security_group_id
 
@@ -116,8 +120,8 @@ def get_sg(name, vpc_id, region):
             "Security Group {0} was not found".format(name)
         )
 
-def get_server_certificate(name, region=None):
-    client = boto3.client('iam', region_name=region)
+def get_server_certificate(name, region=None, profile=None):
+    client = aws_client(region, 'iam', profile)
     try:
         cert_meta = (
             client.get_server_certificate(
@@ -132,8 +136,8 @@ def get_server_certificate(name, region=None):
 
     return return_key
 
-def get_instance_profile(name, region=None):
-    client = boto3.client('iam', region_name=region)
+def get_instance_profile(name, region=None, profile=None):
+    client = aws_client(region, 'iam', profile)
     try:
         profile = (
             client.get_instance_profile(
@@ -148,8 +152,8 @@ def get_instance_profile(name, region=None):
 
     return return_key
 
-def get_sqs(name, key='arn', region=None):
-    client = boto3.client('sqs', region_name=region)
+def get_sqs(name, key='arn', region=None, profile=None):
+    client = aws_client(region, 'sqs', profile)
     try:
         url = client.get_queue_url(QueueName=name)['QueueUrl']
         if key == 'arn':
@@ -168,8 +172,8 @@ def get_sqs(name, key='arn', region=None):
 
     return return_key
 
-def get_dynamodb_base_arn(region=None):
-    client = boto3.client('dynamodb', region_name=region)
+def get_dynamodb_base_arn(region=None, profile=None):
+    client = aws_client(region, 'dynamodb', profile)
     try:
         tables = client.list_tables(Limit=1)
         table = tables['TableNames'][0]
@@ -181,8 +185,8 @@ def get_dynamodb_base_arn(region=None):
             "Unable to find 1 DynamoDB Table"
         )
 
-def get_kinesis_stream_arn(stream_name, region=None):
-    client = boto3.client('kinesis', region_name=region)
+def get_kinesis_stream_arn(stream_name, region=None, profile=None):
+    client = aws_client(region, 'kinesis', profile)
     try:
         arn = (
             client.describe_stream(
@@ -195,8 +199,8 @@ def get_kinesis_stream_arn(stream_name, region=None):
             "Unable to find Kinesis Stream {0}".format(stream_name)
         )
 
-def zones(region=None):
-    client = boto3.client('ec2', region_name=region)
+def zones(region=None, profile=None):
+    client = aws_client(region, 'ec2', profile)
     zone_names = (
         map(lambda x: x['ZoneName'],
             client.describe_availability_zones()['AvailabilityZones']
@@ -205,7 +209,7 @@ def zones(region=None):
     zone_names.sort()
     return zone_names
 
-def get_all_vpcs_info_except(except_ids, region=None):
+def get_all_vpcs_info_except(except_ids, region=None, profile=None):
     """
     Args:
     except_ids (list): List of vpc ids, that you do not want to match against.
@@ -219,7 +223,7 @@ def get_all_vpcs_info_except(except_ids, region=None):
         List of vpc ids
     """
     vpcs_info = list()
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'Filters': [
             {
@@ -234,14 +238,13 @@ def get_all_vpcs_info_except(except_ids, region=None):
     }
     vpcs = client.describe_vpcs(**params)
     if vpcs:
-        for vpc_id in except_ids:
-            for vpc in vpcs['Vpcs']:
-                if vpc_id != vpc['VpcId']:
-                    name = ''
-                    if vpc.get('Tags', None):
-                        for tag in vpc['Tags']:
-                            if tag.get('Key', None) == 'Name':
-                                name = tag.get('Value')
+        for vpc in vpcs['Vpcs']:
+            if vpc['VpcId'] not in except_ids:
+                name = ''
+                if vpc.get('Tags', None):
+                    for tag in vpc['Tags']:
+                        if tag.get('Key', None) == 'Name':
+                            name = tag.get('Value')
 
 
                     vpcs_info.append(
@@ -256,23 +259,23 @@ def get_all_vpcs_info_except(except_ids, region=None):
     else:
         raise errors.AnsibleFilterError("No vpcs were found")
 
-def get_rds_address(instance_name, region=None):
+def get_rds_address(instance_name, region=None, profile=None):
     """Retrieve RDS Endpoint Address.
     Args:
         instance_name (str): The rds instance name.
 
     Kwargs:
-        region (str): Aws region
+        region (str): The AWS region.
 
     Basic Usage:
         >>> instance_name = 'db-dev'
         >>> get_rds_address(instance_name)
-        ['rtb-5f78343a']
+        ['rtb-1234567']
 
     Returns:
         List of route table ids
     """
-    client = boto3.client('rds', region_name=region)
+    client = aws_client(region, 'rds', profile)
     try:
         rds_instances = (
             client.describe_db_instances(
@@ -288,7 +291,7 @@ def get_rds_address(instance_name, region=None):
             "DBInstance {0} not found".format(instance_name)
         )
 
-def get_route_table_ids(vpc_id, region=None):
+def get_route_table_ids(vpc_id, region=None, profile=None):
     """
     Args:
         vpc_id (str): The vpc id in which the subnet you are looking
@@ -303,7 +306,7 @@ def get_route_table_ids(vpc_id, region=None):
         List of route table ids
     """
     route_ids = list()
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'Filters': [
             {
@@ -325,7 +328,7 @@ def get_route_table_ids(vpc_id, region=None):
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
-def get_all_route_table_ids(region):
+def get_all_route_table_ids(region, profile=None):
     """
     Args:
         vpc_id (str): The vpc you want to exclude routes from.
@@ -338,7 +341,7 @@ def get_all_route_table_ids(region):
         List of route table ids
     """
     route_ids = list()
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'Filters': [
             {
@@ -355,7 +358,7 @@ def get_all_route_table_ids(region):
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
-def get_all_route_table_ids_except(vpc_id, region=None):
+def get_all_route_table_ids_except(vpc_id, region=None, profile=None):
     """
     Args:
         vpc_id (str): The vpc you want to exclude routes from.
@@ -369,7 +372,7 @@ def get_all_route_table_ids_except(vpc_id, region=None):
         List of route table ids
     """
     route_ids = list()
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'Filters': [
             {
@@ -390,13 +393,14 @@ def get_all_route_table_ids_except(vpc_id, region=None):
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
-def get_vpc_ids_from_names(vpc_names, client):
+def get_vpc_ids_from_names(vpc_names, region=None, profile=None):
     """Return a list of vpc ids from the list of vpc names that were matched.
     Args:
         vpc_names (list): List of vpc names you are searching for.
         client (Boto3.Client): The instantiated boto3 client.
     """
     vpc_ids = list()
+    client = aws_client(region, 'ec2', profile)
     vpcs = client.describe_vpcs()
     for vpc in vpcs['Vpcs']:
         if vpc.has_key('Tags'):
@@ -407,13 +411,13 @@ def get_vpc_ids_from_names(vpc_names, client):
                             vpc_ids.append(vpc['VpcId'])
     return vpc_ids
 
-def get_all_route_table_ids_except_vpc_names(vpc_names, region=None):
+def get_all_route_table_ids_except_vpc_names(vpc_names, region=None, profile=None):
     """
     Args:
         vpc_names (list): List of vpc names you are searching for.
 
     Kwargs:
-        region (str): The aws region in which the route table exists.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> vpc_names = ['test', 'foo']
@@ -424,8 +428,8 @@ def get_all_route_table_ids_except_vpc_names(vpc_names, region=None):
         List of route table ids
     """
     route_ids = list()
-    client = boto3.client('ec2', region_name=region)
-    vpc_ids = get_vpc_ids_from_names(vpc_names, client)
+    client = aws_client(region, 'ec2', profile)
+    vpc_ids = get_vpc_ids_from_names(vpc_names, region, profile)
     params = {
         'Filters': [
             {
@@ -446,13 +450,13 @@ def get_all_route_table_ids_except_vpc_names(vpc_names, region=None):
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
-def get_all_subnet_ids_in_route_table(route_table_id, region=None):
+def get_all_subnet_ids_in_route_table(route_table_id, region=None, profile=None):
     """
     Args:
         route_table_id (str): The route table id you are retrieving subnets for.
 
     Kwargs:
-        region (str): The aws region in which the route table exists.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> get_all_subnet_ids_in_route_table("rtb-1234567", us-west-2")
@@ -462,7 +466,7 @@ def get_all_subnet_ids_in_route_table(route_table_id, region=None):
         List of subnet ids
     """
     subnet_ids = list()
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'RouteTableIds': [route_table_id]
     }
@@ -478,7 +482,7 @@ def get_all_subnet_ids_in_route_table(route_table_id, region=None):
             "No subnets were found for {0}".format(route_table_id)
         )
 
-def get_subnet_ids_in_zone(vpc_id, zone, region=None):
+def get_subnet_ids_in_zone(vpc_id, zone, region=None, profile=None):
     """
     Args:
         vpc_id (str): The vpc id in which the subnet you are looking
@@ -496,7 +500,7 @@ def get_subnet_ids_in_zone(vpc_id, zone, region=None):
         List of subnet ids
     """
     subnet_ids = list()
-    client = boto3.client('ec2', region_name=None)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'Filters': [
             {
@@ -516,26 +520,26 @@ def get_subnet_ids_in_zone(vpc_id, zone, region=None):
     else:
         raise errors.AnsibleFilterError("No subnets were found")
 
-def get_subnet_ids(vpc_id, cidrs, region=None):
+def get_subnet_ids(vpc_id, cidrs, region=None, profile=None):
     """
     Args:
         vpc_id (str): The vpc id in which the subnet you are looking
             for lives in,
         cidrs (list): The list of cidrs that you are performing the search on.
-        region (str): The region in which the subnet resides.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> cidrs = ['10.100.10.0/24', '10.100.12.0/24', '10.100.11.0/24']
-        >>> vpc_id = 'vpc-98c797fd'
+        >>> vpc_id = 'vpc-123456'
         >>> aws_region = 'us-west-2'
         >>> get_subnet_ids(vpc_id, cidrs, aws_region)
-        [u'subnet-4c2f683b', u'subnet-877de3de', u'subnet-441e3f21']
+        [u'subnet-123456', u'subnet-765432', u'subnet-123456']
 
     Returns:
         List of subnet ids
     """
     subnet_ids = list()
-    client = boto3.client('ec2', region_name=None)
+    client = aws_client(region, 'ec2', profile)
     params = {
         'Filters': [
             {
@@ -560,22 +564,22 @@ def get_subnet_ids(vpc_id, cidrs, region=None):
     else:
         raise errors.AnsibleFilterError("No subnets were found")
 
-def get_vpc_id_by_name(name, region):
+def get_vpc_id_by_name(name, region, profile=None):
     """
     Args:
         name (str): The name of the vpc you are retrieving the id for.
-        region (str): The region in which the elb resides.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> vpc_name = 'test'
         >>> aws_region = 'us-west-2'
         >>> vpc_id = get_vpc_id_by_name(vpc_name, aws_region)
-        'vpc-98c797fd'
+        'vpc-1234567'
 
     Returns:
         VPC ID
     """
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     params = {
         "Filters": [
             {
@@ -601,13 +605,13 @@ def vpc_exists(name, region):
     """
     Args:
         name (str): The name of the vpc you are retrieving the id for.
-        region (str): The region in which the elb resides.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> vpc_name = 'test'
         >>> aws_region = 'us-west-2'
         >>> vpc_id = vpc_exists(vpc_name, aws_region)
-        'vpc-98c797fd'
+        'vpc-1234567'
 
     Returns:
         VPC ID
@@ -621,11 +625,11 @@ def vpc_exists(name, region):
 
 def get_ami_images(name, region, arch="x86_64", virt_type="hvm",
                  owner="099720109477", sort=False, sort_by="creationDate",
-                 sort_by_tag=False, tags=None, order="desc"):
+                 sort_by_tag=False, tags=None, order="desc", fail_if_empty=False):
     """
     Args:
         name (str): The name of the of the image you are searching for.
-        region (str): The region in which the image resides.
+        region (str): The AWS region.
     Kwargs:
         arch (str): The architecture of the image (i386|x86_64)
             default=x86_64
@@ -647,7 +651,7 @@ def get_ami_images(name, region, arch="x86_64", virt_type="hvm",
         >>> name = 'ubuntu/images/hvm/ubuntu-trusty-14.04-amd64-server-20150609'
         >>> aws_region = 'us-west-2'
         >>> images = get_ami_images(name, aws_region)
-        [Image:ami-a9e2da99]
+        [Image:ami-1234567]
 
     Returns:
         List of image ids
@@ -677,15 +681,15 @@ def get_ami_images(name, region, arch="x86_64", virt_type="hvm",
                 images.sort(key=lambda x: x.tags[sort_by], reverse=reverse)
             else:
                 images.sort(key=lambda x: getattr(x, sort_by), reverse=reverse)
-        return images
-    else:
+    elif len(images) == 0 and fail_if_empty:
         raise errors.AnsibleFilterError(
-            "No images were found with name {0}, arch {1}, and virt_type {2}"
-            .format(name, arch, virt_type)
+            "No instance was found with name {0} in region {1}"
+            .format(name, region)
         )
+    return images
 
 def get_instances_by_tags(region, tags, return_key="PublicIpAddress",
-                          state=None):
+                          state=None, profile=None):
     """Retrieve instances by 1 or multiple tags.
     Args:
         region (str): The AWS region.
@@ -710,7 +714,7 @@ def get_instances_by_tags(region, tags, return_key="PublicIpAddress",
     """
     filters = list()
     instances = list()
-    client = boto3.client('ec2', region_name=region)
+    client = aws_client(region, 'ec2', profile)
     for key, val in tags.items():
         filters.append(
             {
@@ -731,14 +735,38 @@ def get_instances_by_tags(region, tags, return_key="PublicIpAddress",
         for instance in reservation['Instances']:
             instances.append(instance.get(return_key))
 
-    return instances
+    if not reservations:
+        raise errors.AnsibleFilterError(
+            "No instance was found with the following tags {0} in region {1}"
+            .format(tags, region)
+        )
+    else:
+        return instances
+
+
+def get_instance_by_tags(region, tags, return_key="PublicIpAddress",
+                         state=None, profile=None):
+
+    instances = get_instances_by_tags(region, tags, return_key, state, profile)
+    if len(instances) > 1:
+        raise errors.AnsibleFilterError(
+            "More than 1 {0} instance was found with the following tags {1} in region {2}"
+            .format(instances, tags, region)
+        )
+    elif len(instances) == 1:
+        return instances[0]
+    else:
+        raise errors.AnsibleFilterError(
+            "No instances was found with the following tags {0} in region {1}"
+            .format(tags, region)
+        )
 
 def get_instance(name, region, return_key="ip_address", state=None,
                  tag_name='Name', ignore_tag_key=None):
     """
     Args:
         name (str): The name of the instance id you are retrieving the key for.
-        region (str): The region in which the elb resides.
+        region (str): The AWS region.
 
     Kwargs:
         return_key (str): the property of the instance you want to return.
@@ -796,7 +824,7 @@ def get_older_images(name, region, exclude_ami=None,
     """
     Args:
         name (str): The name of the instance id you are retrieving the key for.
-        region (str): The region in which the elb resides.
+        region (str): The AWS region.
 
     Kwargs:
         exclude_ami (str): The ami_image you would like to exclude from
@@ -817,21 +845,13 @@ def get_older_images(name, region, exclude_ami=None,
         image_ids = map(lambda image: image.id, images)
         if exclude_ami in image_ids:
             image_ids.remove(exclude_ami)
-        return list(set(image_ids).difference(amis_that_are_already_tagged))
-    else:
-        raise errors.AnsibleFilterError(
-            "No instance was found with name {0} in region {1}"
-            .format(name, region)
-        )
+    return list(set(image_ids).difference(amis_that_are_already_tagged))
 
 def latest_ami_id(name, region):
     """
     Args:
         name (str): The name of the instance id you are retrieving the key for.
-        region (str): The region in which the elb resides.
-
-    Basic Usage:
-        >>>
+        region (str): The AWS region.
 
     """
     images = (
@@ -846,13 +866,13 @@ def get_ami_image_id(name, region, **kwargs):
     """
     Args:
         name (str): The name of the of the image you are searching for.
-        region (str): The region in which the image resides.
+        region (str): The AWS region.
 
     Basic Usage:
         >>> name = 'ubuntu/images/hvm/ubuntu-trusty-14.04-amd64-server-20150609'
         >>> aws_region = 'us-west-2'
         >>> get_ami_image_id(name, aws_region)
-        u'ami-a9e2da99'
+        u'ami-1234567'
 
     Returns:
         AMI Image Id
@@ -880,6 +900,62 @@ def get_instance_id_by_name(name, region, state="running"):
     )
     return instance_id
 
+def get_acm_arn(domain_name, region, profile=None):
+    """Retrieve the attributes of a certificate if it exists or all certs.
+    Args:
+        domain_name (str): The domain name of the certificate.
+        region (str): The AWS region.
+
+    Basic Usage:
+        >>> import boto3
+        >>> acm = boto3.client('acm')
+        >>> arn = get_acm_arn(acm)
+        "arn:aws:acm:us-west-2:123456789:certificate/25b4ad8a-1e24-4001-bcd0-e82fb3554cd7",
+    """
+    arn = None
+    client = aws_client(region, 'acm', profile)
+    acm_certs = client.list_certificates()['CertificateSummaryList']
+    for cert in acm_certs:
+        if domain_name == cert['DomainName']:
+            arn = cert['CertificateArn']
+            return arn
+    if not arn:
+        raise errors.AnsibleFilterError(
+            'Certificate {0} does not exist'.format(domain_name)
+        )
+
+def get_redshift_ip(region, name, return_key='private', profile=None):
+    """Retrieve the private or public ip of the redshift cluster
+    Args:
+        region (str): The AWS region.
+        name (str): The name of the redshift cluster.
+
+    Kwargs:
+        return_key (str): Valid values are private or public.
+
+    Basic Usage:
+        >>> import boto3
+        >>> redshift = boto3.client('redshift', 'us-west-2')
+        >>> private_ip = get_redshift_ip(region, 'test')
+        10.0.0.100
+    """
+    if return_key == 'private':
+        return_key = 'PrivateIPAddress'
+    elif return_key == 'public':
+        return_key = 'PublicIPAddress'
+
+    ip = None
+    client = aws_client(region, 'redshift', profile)
+    try:
+        cluster = client.describe_clusters(ClusterIdentifier=name)['Clusters'][0]
+        for node in cluster['ClusterNodes']:
+            if node['NodeRole'] == 'SHARED' or node['NodeRole'] == 'LEADER':
+                ip = node[return_key]
+                return ip
+    except Exception as e:
+        raise errors.AnsibleFilterError(
+            'Could not retreive ip for {0}: {1}'.format(name, str(e))
+        )
 
 class FilterModule(object):
     ''' Ansible core jinja2 filters '''
@@ -909,6 +985,10 @@ class FilterModule(object):
             "get_dynamodb_base_arn": get_dynamodb_base_arn,
             'get_kinesis_stream_arn': get_kinesis_stream_arn,
             'get_account_id': get_account_id,
+            'get_instance_by_tags': get_instance_by_tags,
             'get_instances_by_tags': get_instances_by_tags,
+            'get_acm_arn': get_acm_arn,
+            'get_redshift_ip': get_redshift_ip,
+            'get_vpc_ids_from_names': get_vpc_ids_from_names,
         }
 

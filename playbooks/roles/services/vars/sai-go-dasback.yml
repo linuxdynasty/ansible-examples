@@ -1,2 +1,0 @@
-sqs_queue_url: "{{ sqs_queue_name | get_sqs('url', aws_region) }}"
-notify_sqs_queue_url: "{{ notify_sqs_queue_name | get_sqs('url', aws_region) }}"
