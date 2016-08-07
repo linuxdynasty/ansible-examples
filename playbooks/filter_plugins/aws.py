@@ -7,9 +7,26 @@ import boto.ec2.autoscale
 
 from ansible import errors
 
+
 def aws_client(region, service='ec2', profile=None):
+    """ Set the boto3 client with the correct service and AWS profile.
+
+    Args:
+        region (str): The AWS region you want this client to connect to.
+            example us-west-2
+    Kwargs:
+        service (str): The service this client will connect to.
+        profile (str): The aws profile name that is set in ~/.aws/credentials
+
+    Basic Usage:
+        >>> client = aws_client('us-west-2', 'kinesis', profile='prod')
+
+    Returns:
+        botocore.client.EC2
+    """
     session = boto3.Session(region_name=region, profile_name=profile)
     return session.client(service)
+
 
 def get_account_id(region, profile=None):
     """ Retrieve the AWS account id.
@@ -32,6 +49,7 @@ def get_account_id(region, profile=None):
         raise errors.AnsibleFilterError(
             "Failed to retrieve account id"
         )
+
 
 def get_sg_cidrs(name, vpc_id, region, profile=None):
     """
@@ -120,7 +138,23 @@ def get_sg(name, vpc_id, region, profile=None):
             "Security Group {0} was not found".format(name)
         )
 
+
 def get_server_certificate(name, region=None, profile=None):
+    """ Retrieve the ARN of a server certificate.
+    Args:
+        name: (str): The name of the server certificate.
+
+    Kwargs:
+        region (str): The AWS region.
+        profile (str): The ~/.aws/credentials profile name to use
+
+    Basic Usage:
+        >>> arn = get_server_certificate('test', region='us-west-2')
+        'arn:aws:iam::12345678910:server-certificate/test'
+
+    Returns:
+        String
+    """
     client = aws_client(region, 'iam', profile)
     try:
         cert_meta = (
@@ -136,7 +170,23 @@ def get_server_certificate(name, region=None, profile=None):
 
     return return_key
 
+
 def get_instance_profile(name, region=None, profile=None):
+    """ Retrieve the instance profile of an IAM role.
+    Args:
+        name: (str): The name of the IAM role.
+
+    Kwargs:
+        region (str): The AWS region.
+        profile (str): The ~/.aws/credentials profile name to use
+
+    Basic Usage:
+        >>> arn = get_instance_profile('test', region='us-west-2')
+        'arn:aws:iam::12345678910:instance-profile/test'
+
+    Returns:
+        String
+    """
     client = aws_client(region, 'iam', profile)
     try:
         profile = (
@@ -152,7 +202,25 @@ def get_instance_profile(name, region=None, profile=None):
 
     return return_key
 
+
 def get_sqs(name, key='arn', region=None, profile=None):
+    """ Retrieve the arn or url a SQS Queue.
+    Args:
+        name: (str): The SQS name.
+
+    Kwargs:
+        key (str): The key you want returned from the SQS Queue (url or arn)
+            default=arn
+        region (str): The AWS region.
+        profile (str): The ~/.aws/credentials profile name to use
+
+    Basic Usage:
+        >>> arn = get_sqs('test', region='us-west-2')
+        'arn:aws:sqs:us-west-2:12345678910:test'
+
+    Returns:
+        String
+    """
     client = aws_client(region, 'sqs', profile)
     try:
         url = client.get_queue_url(QueueName=name)['QueueUrl']
@@ -172,7 +240,20 @@ def get_sqs(name, key='arn', region=None, profile=None):
 
     return return_key
 
+
 def get_dynamodb_base_arn(region=None, profile=None):
+    """ Retrieve the base ARN of DynamoDB.
+    Kwargs:
+        region (str): The AWS region.
+        profile (str): The ~/.aws/credentials profile name to use
+
+    Basic Usage:
+        >>> base_arn = get_dynamodb_base_arn(us-west-2')
+        arn:aws:dynamodb:us-west-2:12345678910:table
+
+    Returns:
+        String
+    """
     client = aws_client(region, 'dynamodb', profile)
     try:
         tables = client.list_tables(Limit=1)
@@ -185,7 +266,22 @@ def get_dynamodb_base_arn(region=None, profile=None):
             "Unable to find 1 DynamoDB Table"
         )
 
+
 def get_kinesis_stream_arn(stream_name, region=None, profile=None):
+    """ Retrieve the ARN of a kinesis stream.
+    Args:
+        stream_name (str): The name of the Kinesis stream.
+    Kwargs:
+        region (str): The AWS region.
+        profile (str): The ~/.aws/credentials profile name to use
+
+    Basic Usage:
+        >>> arn = get_kinesis_stream_arn('test', us-west-2')
+        arn:aws:kinesis:east-side:123456789:stream/test
+
+    Returns:
+        String
+    """
     client = aws_client(region, 'kinesis', profile)
     try:
         arn = (
@@ -199,7 +295,20 @@ def get_kinesis_stream_arn(stream_name, region=None, profile=None):
             "Unable to find Kinesis Stream {0}".format(stream_name)
         )
 
+
 def zones(region=None, profile=None):
+    """ Retrieve a list of available zones in a region.
+    Kwargs:
+        region (str): The AWS region.
+        profile (str): The ~/.aws/credentials profile name to use
+
+    Basic Usage:
+        >>> az = zones('us-west-2')
+        ['us-west-2a', 'us-west-2b', 'us-west-2c']
+
+    Returns:
+        List
+    """
     client = aws_client(region, 'ec2', profile)
     zone_names = (
         map(lambda x: x['ZoneName'],
@@ -209,15 +318,16 @@ def zones(region=None, profile=None):
     zone_names.sort()
     return zone_names
 
+
 def get_all_vpcs_info_except(except_ids, region=None, profile=None):
     """
     Args:
-    except_ids (list): List of vpc ids, that you do not want to match against.
+        except_ids (list): List of vpcs, that you do not want to match against.
 
     Basic Usage:
-        >>> vpc_ids = ['vpc-98c797fd']
+        >>> vpc_ids = ['vpc-345621']
         >>> get_all_vpcs_info_except(vpc_ids)
-        ['vpc-68da9d0d', 'vpc-98c797fd']
+        ['vpc-1234567', 'vpc-97654321']
 
     Returns:
         List of vpc ids
@@ -246,7 +356,6 @@ def get_all_vpcs_info_except(except_ids, region=None, profile=None):
                         if tag.get('Key', None) == 'Name':
                             name = tag.get('Value')
 
-
                     vpcs_info.append(
                         {
                             'name': name,
@@ -258,6 +367,7 @@ def get_all_vpcs_info_except(except_ids, region=None, profile=None):
         return vpcs_info
     else:
         raise errors.AnsibleFilterError("No vpcs were found")
+
 
 def get_rds_address(instance_name, region=None, profile=None):
     """Retrieve RDS Endpoint Address.
@@ -288,8 +398,9 @@ def get_rds_address(instance_name, region=None, profile=None):
             raise errors.AnsibleFilterError("More than rds 1 instance found")
     except Exception as e:
         raise errors.AnsibleFilterError(
-            "DBInstance {0} not found".format(instance_name)
+            "DBInstance {0} not found: {1}".format(instance_name, str(e))
         )
+
 
 def get_route_table_ids(vpc_id, region=None, profile=None):
     """
@@ -328,6 +439,7 @@ def get_route_table_ids(vpc_id, region=None, profile=None):
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
+
 def get_all_route_table_ids(region, profile=None):
     """
     Args:
@@ -335,7 +447,7 @@ def get_all_route_table_ids(region, profile=None):
 
     Basic Usage:
         >>> get_all_route_table_ids("us-west-2")
-        ['rtb-5f78343a']
+        ['rtb-1234567']
 
     Returns:
         List of route table ids
@@ -357,6 +469,7 @@ def get_all_route_table_ids(region, profile=None):
         return route_ids
     else:
         raise errors.AnsibleFilterError("No routes were found")
+
 
 def get_all_route_table_ids_except(vpc_id, region=None, profile=None):
     """
@@ -393,6 +506,7 @@ def get_all_route_table_ids_except(vpc_id, region=None, profile=None):
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
+
 def get_vpc_ids_from_names(vpc_names, region=None, profile=None):
     """Return a list of vpc ids from the list of vpc names that were matched.
     Args:
@@ -403,7 +517,7 @@ def get_vpc_ids_from_names(vpc_names, region=None, profile=None):
     client = aws_client(region, 'ec2', profile)
     vpcs = client.describe_vpcs()
     for vpc in vpcs['Vpcs']:
-        if vpc.has_key('Tags'):
+        if 'Tags' in vpc:
             for tag in vpc['Tags']:
                 if tag['Key'] == 'Name':
                     for name in vpc_names:
@@ -411,7 +525,9 @@ def get_vpc_ids_from_names(vpc_names, region=None, profile=None):
                             vpc_ids.append(vpc['VpcId'])
     return vpc_ids
 
-def get_all_route_table_ids_except_vpc_names(vpc_names, region=None, profile=None):
+
+def get_all_route_table_ids_except_vpc_names(vpc_names, region=None,
+                                             profile=None):
     """
     Args:
         vpc_names (list): List of vpc names you are searching for.
@@ -450,10 +566,12 @@ def get_all_route_table_ids_except_vpc_names(vpc_names, region=None, profile=Non
     else:
         raise errors.AnsibleFilterError("No routes were found")
 
-def get_all_subnet_ids_in_route_table(route_table_id, region=None, profile=None):
+
+def get_all_subnet_ids_in_route_table(route_table_id, region=None,
+                                      profile=None):
     """
     Args:
-        route_table_id (str): The route table id you are retrieving subnets for.
+        route_table_id (str): The route id you are retrieving subnets for.
 
     Kwargs:
         region (str): The AWS region.
@@ -482,6 +600,7 @@ def get_all_subnet_ids_in_route_table(route_table_id, region=None, profile=None)
             "No subnets were found for {0}".format(route_table_id)
         )
 
+
 def get_subnet_ids_in_zone(vpc_id, zone, region=None, profile=None):
     """
     Args:
@@ -491,10 +610,10 @@ def get_subnet_ids_in_zone(vpc_id, zone, region=None, profile=None):
 
     Basic Usage:
         >>> cidrs = ['10.100.10.0/24', '10.100.12.0/24', '10.100.11.0/24']
-        >>> vpc_id = 'vpc-98c797fd'
+        >>> vpc_id = 'vpc-12345678'
         >>> aws_region = 'us-west-2'
         >>> get_subnet_ids(vpc_id, cidrs, aws_region)
-        [u'subnet-4c2f683b', u'subnet-877de3de', u'subnet-441e3f21']
+        [u'subnet-4324567', u'subnet-12345678', u'subnet-6543210']
 
     Returns:
         List of subnet ids
@@ -519,6 +638,7 @@ def get_subnet_ids_in_zone(vpc_id, zone, region=None, profile=None):
         return subnet_ids
     else:
         raise errors.AnsibleFilterError("No subnets were found")
+
 
 def get_subnet_ids(vpc_id, cidrs, region=None, profile=None):
     """
@@ -564,6 +684,7 @@ def get_subnet_ids(vpc_id, cidrs, region=None, profile=None):
     else:
         raise errors.AnsibleFilterError("No subnets were found")
 
+
 def get_vpc_id_by_name(name, region, profile=None):
     """
     Args:
@@ -595,11 +716,13 @@ def get_vpc_id_by_name(name, region, profile=None):
     try:
         vpc_id = client.describe_vpcs(**params)['Vpcs'][0]['VpcId']
         return vpc_id
+
     except Exception as e:
         raise errors.AnsibleFilterError(
-            "VPC ID for VPC name {0} was not found in region {1}"
-            .format(name, region)
+            "VPC ID for VPC name {0} was not found in region {1}: {2}"
+            .format(name, region, str(e))
         )
+
 
 def vpc_exists(name, region):
     """
@@ -623,9 +746,11 @@ def vpc_exists(name, region):
         vpc_id = 'does not exist'
     return vpc_id
 
+
 def get_ami_images(name, region, arch="x86_64", virt_type="hvm",
-                 owner="099720109477", sort=False, sort_by="creationDate",
-                 sort_by_tag=False, tags=None, order="desc", fail_if_empty=False):
+                   owner="099720109477", sort=False, sort_by="creationDate",
+                   sort_by_tag=False, tags=None, order="desc",
+                   fail_if_empty=False):
     """
     Args:
         name (str): The name of the of the image you are searching for.
@@ -687,6 +812,7 @@ def get_ami_images(name, region, arch="x86_64", virt_type="hvm",
             .format(name, region)
         )
     return images
+
 
 def get_instances_by_tags(region, tags, return_key="PublicIpAddress",
                           state=None, profile=None):
@@ -761,6 +887,7 @@ def get_instance_by_tags(region, tags, return_key="PublicIpAddress",
             .format(tags, region)
         )
 
+
 def get_instance(name, region, return_key="ip_address", state=None,
                  tag_name='Name', ignore_tag_key=None):
     """
@@ -803,7 +930,7 @@ def get_instance(name, region, return_key="ip_address", state=None,
         if ignore_tag_key:
             does_not_have_tag_instances = list()
             for image in images:
-                if not image.instances[0].tags.has_key(ignore_tag_key):
+                if ignore_tag_key not in image.instances[0].tags:
                     instance = images[0].instances[0]
                     result = getattr(instance, return_key)
                     does_not_have_tag_instances.append(result)
@@ -818,6 +945,7 @@ def get_instance(name, region, return_key="ip_address", state=None,
             "No instance was found with name {0} in region {1}"
             .format(name, region)
         )
+
 
 def get_older_images(name, region, exclude_ami=None,
                      exclude_archived=True, **kwargs):
@@ -840,15 +968,16 @@ def get_older_images(name, region, exclude_ami=None,
     if images:
         if exclude_archived:
             for ami in images:
-                if ami.tags.has_key('ArchivedDate'):
+                if 'ArchivedDate' in ami.tags:
                     amis_that_are_already_tagged.append(ami.id)
         image_ids = map(lambda image: image.id, images)
         if exclude_ami in image_ids:
             image_ids.remove(exclude_ami)
     return list(set(image_ids).difference(amis_that_are_already_tagged))
 
+
 def latest_ami_id(name, region):
-    """
+    """Retrieve the last ami that was created with name.
     Args:
         name (str): The name of the instance id you are retrieving the key for.
         region (str): The AWS region.
@@ -861,6 +990,7 @@ def latest_ami_id(name, region):
         )
     )
     return images[0]
+
 
 def get_ami_image_id(name, region, **kwargs):
     """
@@ -894,11 +1024,13 @@ def get_ami_image_id(name, region, **kwargs):
             .format(name, region)
         )
 
+
 def get_instance_id_by_name(name, region, state="running"):
     instance_id = (
         get_instance(name, region, return_key="id", state=state)
     )
     return instance_id
+
 
 def get_acm_arn(domain_name, region, profile=None):
     """Retrieve the attributes of a certificate if it exists or all certs.
@@ -923,6 +1055,28 @@ def get_acm_arn(domain_name, region, profile=None):
         raise errors.AnsibleFilterError(
             'Certificate {0} does not exist'.format(domain_name)
         )
+
+
+def get_redshift_endpoint(region, name, profile=None):
+    """Retrieve the endpoint name of the redshift cluster.
+    Args:
+        region (str): The AWS region.
+        name (str): The name of the redshift cluster.
+
+    Basic Usage:
+        >>> import boto3
+        >>> redshift = boto3.client('redshift', 'us-west-2')
+        >>> endpoint = get_redshift_endpoint(region, 'test')
+        dns_name
+    """
+    client = aws_client(region, 'redshift', profile)
+    try:
+        return client.describe_clusters(ClusterIdentifier=name)['Clusters'][0]['Endpoint']['Address']
+    except Exception as e:
+        raise errors.AnsibleFilterError(
+            'Could not retreive ip for {0}: {1}'.format(name, str(e))
+        )
+
 
 def get_redshift_ip(region, name, return_key='private', profile=None):
     """Retrieve the private or public ip of the redshift cluster
@@ -957,6 +1111,37 @@ def get_redshift_ip(region, name, return_key='private', profile=None):
             'Could not retreive ip for {0}: {1}'.format(name, str(e))
         )
 
+
+def get_route53_id(region, name, profile=None):
+    """Retrieve the id of a route53 hosted zone.
+    Args:
+        region (str): The AWS region.
+        name (str): The name of the route53 hosted zone.
+
+    Basic Usage:
+        >>> import boto3
+        >>> route53 = boto3.client('route53', 'us-west-2')
+        >>> id = get_route53_id(region, 'test')
+        /hostedzone/1231241421
+    """
+    client = aws_client(region, 'route53', profile)
+    zone_id = None
+    try:
+        zones = client.list_hosted_zones_by_name()['HostedZones']
+        for zone in zones:
+            if zone['Name'].rstrip('.') == name:
+                zone_id = zone['Id']
+        if not zone_id:
+            raise errors.AnsibleFilterError(
+                'Zone name {0} does not exist'.format(name)
+            )
+
+    except Exception as e:
+        raise errors.AnsibleFilterError(
+            'Could not retreive zone id for {0}: {1}'.format(name, str(e))
+        )
+
+
 class FilterModule(object):
     ''' Ansible core jinja2 filters '''
 
@@ -989,6 +1174,7 @@ class FilterModule(object):
             'get_instances_by_tags': get_instances_by_tags,
             'get_acm_arn': get_acm_arn,
             'get_redshift_ip': get_redshift_ip,
+            'get_redshift_endpoint': get_redshift_endpoint,
             'get_vpc_ids_from_names': get_vpc_ids_from_names,
+            'get_route53_id': get_route53_id,
         }
-
