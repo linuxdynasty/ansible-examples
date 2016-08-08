@@ -369,21 +369,19 @@ def get_all_vpcs_info_except(except_ids, region=None, profile=None):
         raise errors.AnsibleFilterError("No vpcs were found")
 
 
-def get_rds_address(instance_name, region=None, profile=None):
+def get_rds_endpoint(region, instance_name, profile=None):
     """Retrieve RDS Endpoint Address.
     Args:
-        instance_name (str): The rds instance name.
-
-    Kwargs:
         region (str): The AWS region.
+        instance_name (str): The rds instance name.
 
     Basic Usage:
         >>> instance_name = 'db-dev'
-        >>> get_rds_address(instance_name)
-        ['rtb-1234567']
+        >>> get_rds_endpoint('us-west-2', instance_name)
+        db-dev.absdefg.us-west-2.rds.amazon.com
 
     Returns:
-        List of route table ids
+        String
     """
     client = aws_client(region, 'rds', profile)
     try:
@@ -609,10 +607,10 @@ def get_subnet_ids_in_zone(vpc_id, zone, region=None, profile=None):
         zone (str): The region in which the subnet resides.
 
     Basic Usage:
-        >>> cidrs = ['10.100.10.0/24', '10.100.12.0/24', '10.100.11.0/24']
         >>> vpc_id = 'vpc-12345678'
         >>> aws_region = 'us-west-2'
-        >>> get_subnet_ids(vpc_id, cidrs, aws_region)
+        >>> zone = 'us-west-2c'
+        >>> get_subnet_ids_in_zone(vpc_id, zone, aws_region)
         [u'subnet-4324567', u'subnet-12345678', u'subnet-6543210']
 
     Returns:
@@ -632,9 +630,9 @@ def get_subnet_ids_in_zone(vpc_id, zone, region=None, profile=None):
             }
         ]
     }
-    subnets = client.describe_subnets(**params)
+    subnets = client.describe_subnets(**params)['Subnets']
     if subnets:
-        subnet_ids = map(lambda subnet: subnet.id, subnets)
+        subnet_ids = map(lambda subnet: subnet['SubnetId'], subnets)
         return subnet_ids
     else:
         raise errors.AnsibleFilterError("No subnets were found")
@@ -1039,9 +1037,7 @@ def get_acm_arn(domain_name, region, profile=None):
         region (str): The AWS region.
 
     Basic Usage:
-        >>> import boto3
-        >>> acm = boto3.client('acm')
-        >>> arn = get_acm_arn(acm)
+        >>> arn = get_acm_arn('test', 'us-west-2')
         "arn:aws:acm:us-west-2:123456789:certificate/25b4ad8a-1e24-4001-bcd0-e82fb3554cd7",
     """
     arn = None
@@ -1054,6 +1050,25 @@ def get_acm_arn(domain_name, region, profile=None):
     if not arn:
         raise errors.AnsibleFilterError(
             'Certificate {0} does not exist'.format(domain_name)
+        )
+
+
+def get_elasticache_endpoint(region, name, profile=None):
+    """Retrieve the endpoint name of the elasticache cluster.
+    Args:
+        region (str): The AWS region.
+        name (str): The name of the elasticache cluster.
+
+    Basic Usage:
+        >>> endpoint = get_elasticache_endpoint('us-west-2', 'test')
+        dns_name
+    """
+    client = aws_client(region, 'elasticache', profile)
+    try:
+        return client.describe_cache_clusters(CacheClusterId=name)['CacheClusters'][0]['ConfigurationEndpoint']['Address']
+    except Exception as e:
+        raise errors.AnsibleFilterError(
+            'Could not retreive ip for {0}: {1}'.format(name, str(e))
         )
 
 
@@ -1161,7 +1176,7 @@ class FilterModule(object):
             'get_all_route_table_ids_except': get_all_route_table_ids_except,
             'get_subnet_ids_in_zone': get_subnet_ids_in_zone,
             'latest_ami_id': latest_ami_id,
-            'get_rds_address': get_rds_address,
+            'get_rds_endpoint': get_rds_endpoint,
             'zones': zones,
             'get_sqs': get_sqs,
             'get_instance_profile': get_instance_profile,
@@ -1175,6 +1190,7 @@ class FilterModule(object):
             'get_acm_arn': get_acm_arn,
             'get_redshift_ip': get_redshift_ip,
             'get_redshift_endpoint': get_redshift_endpoint,
+            'get_elasticache_endpoint': get_elasticache_endpoint,
             'get_vpc_ids_from_names': get_vpc_ids_from_names,
             'get_route53_id': get_route53_id,
         }
