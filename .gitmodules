@@ -1,0 +1,6 @@
+[submodule "playbooks/filter_plugins"]
+	path = playbooks/filter_plugins
+	url = git@github.com:linuxdynasty/ld-ansible-filter-plugins.git
+[submodule "playbooks/action_plugins"]
+	path = playbooks/action_plugins
+	url = git@github.com:linuxdynasty/ld-ansible-action-plugins.git
