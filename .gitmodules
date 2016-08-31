@@ -4,3 +4,6 @@
 [submodule "playbooks/action_plugins"]
 	path = playbooks/action_plugins
 	url = git@github.com:linuxdynasty/ld-ansible-action-plugins.git
+[submodule "playbooks/library"]
+	path = playbooks/library
+	url = git@github.com:linuxdynasty/ld-ansible-modules.git
