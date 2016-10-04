@@ -1,5 +1,5 @@
 ---
-- include: dynamic_groups.yml
+- include: dynamic_vars.yml
 
 - hosts: 127.0.0.1
   roles:

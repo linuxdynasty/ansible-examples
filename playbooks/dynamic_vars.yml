@@ -10,12 +10,19 @@
         - env
 
   tasks:
-    - include_vars: "group_vars/services/{{ service }}.yml"
+    - include_vars:
+        dir: "vars/all"
+
+    - include_vars:
+        file: "vars/services/{{ service }}.yml"
       when: service != 'vpc'
 
-    - include_vars: "group_vars/environments/{{ env }}/network.yml"
+    - include_vars:
+        dir: "vars/environments/{{ env }}"
+        depth: 1
 
-    - include_vars: "group_vars/environments/{{ env }}/services/{{ service }}.yml"
+    - include_vars:
+        file: "vars/environments/{{ env }}/services/{{ service }}.yml"
       when: service != 'vpc'
 
   post_tasks:

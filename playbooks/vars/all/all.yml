@@ -14,8 +14,7 @@ aws_ansible_key_name: ansible
 deploy_queue_name: Deploy
 
 office_ips:
-  - 64.71.21.198/32
-  - 4.15.74.6/32
+  - 10.0.0.100/32
 
 office_ssh_rules: "{{ office_ips | make_sg_rules(ports=[22]) }}"
 office_sg_name: PublicOffice
